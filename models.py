@@ -72,6 +72,7 @@ class LLAMA2(Model):
         return self.parse_answer(full_answer)
     
     def create_prompt(self, question, system_prompt_type=None):
+        # For the multi-turn prompt, we need to add <s> and </s> tokens
         prompt = '[INST] '
         if system_prompt_type == "simple":
             prompt += '<<SYS>>\nYou are a machine designed to answer multiple choice questions with the correct alternative among A,B,C,D or E. Answer only with the correct alternative.\n<</SYS>>\n\n'
