@@ -8,7 +8,11 @@ class Model(ABC):
         pass
 
     @abstractmethod
-    def get_answer_from_prompt(self, prompt, temperature=0.1):
+    def get_answer_from_question(self, prompt, temperature=0.1):
+        pass
+   
+    @abstractmethod
+    def create_prompt(self, question, system_prompt_type=None):
         pass
 
     def parse_answer(self, answer):
@@ -17,6 +21,7 @@ class Model(ABC):
             ans = answer.split('[/INST]')[-1]
             ans = re.search('[ABCDE]\.',ans).group().rstrip('.') if re.search('[ABCDE]\.',ans) else None
         return ans
+
 
 # Define LLAMA2 model class
 class LLAMA2(Model):
@@ -48,18 +53,31 @@ class LLAMA2(Model):
         self.device = device
         self.model.to(device)
 
-    def get_answer_from_prompt(self, prompt, temperature=0.1):
+    def get_answer_from_question(self, question, temperature=0.1, system_prompt_type=None):
         """
-        Get answer from prompt
+        Get answer from question
 
         Args:
-            prompt (str): prompt
+            question (dict): ENEM question
             temperature (float): temperature
+            system_prompt_type (str): system prompt type (simple, chain-of-thought, llama2-paper). None for no system prompt
 
         Returns:
             str: parsed answer
         """
+        prompt = self.create_prompt(question, system_prompt_type)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
-        outputs = self.model.generate(inputs, temperature=temperature)
-        full_answer = self.tokenizer.batch_decode(outputs,skip_special_tokens=True)[0]
+        outputs = self.model.generate(inputs, temperature=temperature) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
+        full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
         return self.parse_answer(full_answer)
+    
+    def create_prompt(self, question, system_prompt_type=None):
+        prompt = '[INST] '
+        if system_prompt_type == "simple":
+            prompt += '<<SYS>>\nYou are a machine designed to answer multiple choice questions with the correct alternative among A,B,C,D or E. Answer only with the correct alternative.\n<</SYS>>\n\n'
+        elif system_prompt_type == "chain-of-though":
+            raise NotImplementedError
+        elif system_prompt_type == "llama2-paper":
+            prompt += '<<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature. If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don\'t know the answer to a question, please don\'t share false information.\n<</SYS>>\n\n'
+        prompt += f'{question["body"]}\n\nA. {question["A"]}\nB. {question["B"]}\nC. {question["C"]}\nD. {question["D"]}\nE. {question["E"]}\n[/INST]'
+        return prompt
