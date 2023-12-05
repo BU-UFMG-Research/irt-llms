@@ -78,10 +78,10 @@ for i in range(enem.get_enem_size()):
     model_answer = model.get_answer_from_question(question, temperature=args.temperature, system_prompt_type=args.system_prompt_type)
     correct_answer = enem.get_correct_answer(i)
 
-    if model_answer is None:
+    if model_answer is None or not model_answer in list("ABCDE"):
         # Raise warning when model answer is None
         print("Warning: model answer is None for question ", i)
-        model_answer = "Z"
+        model_answer = "X"
 
     # TODO: How about the case where the model answer is "anulada" (voided)?
     if model_answer == correct_answer:
