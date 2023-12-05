@@ -15,9 +15,6 @@ class ENEM():
         # We have columns A, B, C, D, E. Map them to answer_order
         self.df_enem.rename(columns={"A": self.answer_order[0], "B": self.answer_order[1], "C": self.answer_order[2], "D": self.answer_order[3], "E": self.answer_order[4]}, inplace=True)
 
-        print(self.df_enem.head())
-        a = input()
-
         # Shuffle questions if necessary
         if question_order == "random":
             self.df_enem = self.df_enem.sample(frac=1, random_state=seed).reset_index(drop=True)
@@ -26,11 +23,7 @@ class ENEM():
         else:
             raise Exception("Question order not implemented")
         
-        print(self.df_enem.head())
-
         self.enem_exam = self.df_enem.to_dict(orient='records')
-        print()
-        print(self.enem_exam[0])
 
     def get_question(self, question_id):
         return self.enem_exam[question_id]
