@@ -1,12 +1,15 @@
-import argparse
 import os
+os.environ['TRANSFORMERS_CACHE'] = "cache/"
+
+import argparse
 import time
+import pandas as pd
 import torch
 from models import LLAMA2
 from exam import ENEM
 
 """
-LLAMA2 model config (7B):
+LLAMA2 model config (7B, 13B, 70B):
 GenerationConfig {
   "bos_token_id": 1,
   "do_sample": true,
@@ -23,10 +26,10 @@ parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 parser.add_argument('--model', type=str, choices=["llama2"], required=True, help='Model to run')
 parser.add_argument('--model_size', type=str, choices=["7b"], required=True, help='Model size')
 parser.add_argument('--enem_exam', type=str, required=True, help='ENEM exam to run')
-parser.add_argument('--temperature', type=float, default=0.1, help='Temperature')
+parser.add_argument('--temperature', type=float, default=0.6, help='Temperature')
 parser.add_argument('--answer_order', type=str, default="ABCDE", help='Answer order')
 parser.add_argument('--question_order', type=str, default="original", choices=["original", "random"], help='Question order on ENEM exam. In random order, questions are shuffled using the seed to control the randomness')
-parser.add_argument('--system_prompt_type', type=str, default=None, choices=["simple", "chain-of-thought", "llama2-paper"], help='System prompt type')
+parser.add_argument('--system_prompt_type', type=str, default="simple", choices=["simple", "cot", "llama2"], help='System prompt type')
 parser.add_argument("--seed", type=int, default=42, help="Random seed")
 
 args = parser.parse_args()
@@ -73,17 +76,26 @@ ctt_score = 0
 # Also measure time
 start_time = time.time()
 
+full_answers = []
+
 for i in range(enem.get_enem_size()):
     question = enem.get_question(i)
-    model_answer = model.get_answer_from_question(question, temperature=args.temperature, system_prompt_type=args.system_prompt_type)
     correct_answer = enem.get_correct_answer(i)
+
+    if correct_answer == "anulada":
+        continue # Skip anulled questions
+
+    model_answer, model_full_answer = model.get_answer_from_question(question, temperature=args.temperature, system_prompt_type=args.system_prompt_type)
+    
+    # Remove the prompt from the full answer
+    model_full_answer = model_full_answer.split("[/INST]")[-1]
+    full_answers.append(model_full_answer)
 
     if model_answer is None or not model_answer in list("ABCDE"):
         # Raise warning when model answer is None
         print("Warning: model answer is None for question ", i)
         model_answer = "X"
 
-    # TODO: How about the case where the model answer is "anulada" (voided)?
     if model_answer == correct_answer:
         model_response_binary_pattern += "1"
         ctt_score += 1
@@ -96,8 +108,11 @@ for i in range(enem.get_enem_size()):
 end_time = time.time()
 
 # Save results to file
-filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.enem_exam}.csv"
-with open(filename, "w") as f:
-    f.write("MODEL_NAME,MODEL_SIZE,TEMPERATURE,ANSWER_ORDER,QUESTION_ORDER,SEED,PROMPT_TYPE,CTT_SCORE,CO_PROVA,TX_RESPOSTAS,TX_GABARITO,RESPONSE_PATTERN,TOTAL_RUN_TIME_SEC,AVG_RUN_TIME_PER_ITEM_SEC")
-    f.write("\n")
-    f.write(f"{args.model},{args.model_size},{args.temperature},{args.answer_order},{args.question_order},{args.seed},{args.system_prompt_type},{ctt_score},{args.enem_exam},{model_response_pattern},{correct_response_pattern},{model_response_binary_pattern},{end_time-start_time},{(end_time-start_time)/enem.get_enem_size()}")
+filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.enem_exam}-{args.answer_order}-{args.question_order}-{args.seed}-{args.system_prompt_type}.parquet"
+df = pd.DataFrame({"MODEL_NAME": [args.model], "MODEL_SIZE": [args.model_size], "TEMPERATURE": [args.temperature], "ANSWER_ORDER": [args.answer_order], "QUESTION_ORDER": [args.question_order], "SEED": [args.seed], "PROMPT_TYPE": [args.system_prompt_type], "CTT_SCORE": [ctt_score], "CO_PROVA": [args.enem_exam], "TX_RESPOSTAS": [model_response_pattern], "TX_GABARITO": [correct_response_pattern], "RESPONSE_PATTERN": [model_response_binary_pattern], "TOTAL_RUN_TIME_SEC": [end_time-start_time], "AVG_RUN_TIME_PER_ITEM_SEC": [(end_time-start_time)/enem.get_enem_size()]})
+df.to_parquet(filename)
+
+# Saving the full answers to a parquet file
+filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.enem_exam}-{args.answer_order}-{args.question_order}-{args.seed}-{args.system_prompt_type}-full-answers.parquet"
+df = pd.DataFrame({"FULL_ANSWERS": [full_answers]})
+df.to_parquet(filename)

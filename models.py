@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import re
 from transformers import LlamaForCausalLM , LlamaTokenizer, set_seed
+import torch
 
 # Define abstract model class
 class Model(ABC):
@@ -39,7 +40,7 @@ class LLAMA2(Model):
         get_answer_from_prompt: get answer from prompt
         parse_answer: parse answer
     """
-    def __init__(self, model_size, token, device, random_seed=0):
+    def __init__(self, model_size, token, device, max_time=120, temperature=0.6, random_seed=0):
         """
         Args:
             model_size (str): model size
@@ -48,17 +49,14 @@ class LLAMA2(Model):
         """
         super().__init__()
         self.tokenizer = LlamaTokenizer.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)
-        self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)
+        self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token, device_map="auto", torch_dtype=torch.float16)
         self.model_size = model_size
         self.device = device
-        self.model.to(device)
+        self.max_time = max_time # Max time in seconds to generate an answer
+        self.temperature = temperature
         set_seed(random_seed)
-        print("Model config: ")
-        print(self.model.config)
-        print("Generation config: ")
-        print(self.model.generation_config)
 
-    def get_answer_from_question(self, question, temperature=0.1, system_prompt_type=None):
+    def get_answer_from_question(self, question, system_prompt_type=None):
         """
         Get answer from question
 
@@ -72,18 +70,18 @@ class LLAMA2(Model):
         """
         prompt = self.create_prompt(question, system_prompt_type)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
-        outputs = self.model.generate(inputs, temperature=temperature) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
+        outputs = self.model.generate(inputs, temperature=self.temperature, max_time=self.max_time) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
         full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
-        return self.parse_answer(full_answer)
+        return self.parse_answer(full_answer), full_answer
     
     def create_prompt(self, question, system_prompt_type=None):
         # For the multi-turn prompt, we need to add <s> and </s> tokens
         prompt = '[INST] '
         if system_prompt_type == "simple":
             prompt += '<<SYS>>\nYou are a machine designed to answer multiple choice questions with the correct alternative among A,B,C,D or E. Answer only with the correct alternative.\n<</SYS>>\n\n'
-        elif system_prompt_type == "chain-of-though":
+        elif system_prompt_type == "cot":
             raise NotImplementedError
-        elif system_prompt_type == "llama2-paper":
+        elif system_prompt_type == "llama2":
             prompt += '<<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature. If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don\'t know the answer to a question, please don\'t share false information.\n<</SYS>>\n\n'
         prompt += f'{question["body"]}\n\nA. {question["A"]}\nB. {question["B"]}\nC. {question["C"]}\nD. {question["D"]}\nE. {question["E"]}\n[/INST]'
         return prompt
