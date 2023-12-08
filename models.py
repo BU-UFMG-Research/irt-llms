@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import re
-from transformers import LlamaForCausalLM , LlamaTokenizer
+from transformers import LlamaForCausalLM , LlamaTokenizer, set_seed
 
 # Define abstract model class
 class Model(ABC):
@@ -39,7 +39,7 @@ class LLAMA2(Model):
         get_answer_from_prompt: get answer from prompt
         parse_answer: parse answer
     """
-    def __init__(self, model_size, token, device):
+    def __init__(self, model_size, token, device, random_seed=0):
         """
         Args:
             model_size (str): model size
@@ -47,11 +47,16 @@ class LLAMA2(Model):
             device (str): device
         """
         super().__init__()
-        self.tokenizer = LlamaTokenizer.from_pretrained(f"meta-llama/Llama-2-{model_size}b-chat-hf", token=token)
-        self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}b-chat-hf", token=token)
+        self.tokenizer = LlamaTokenizer.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)
+        self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)
         self.model_size = model_size
         self.device = device
         self.model.to(device)
+        set_seed(random_seed)
+        print("Model config: ")
+        print(self.model.config)
+        print("Generation config: ")
+        print(self.model.generation_config)
 
     def get_answer_from_question(self, question, temperature=0.1, system_prompt_type=None):
         """
@@ -79,6 +84,6 @@ class LLAMA2(Model):
         elif system_prompt_type == "chain-of-though":
             raise NotImplementedError
         elif system_prompt_type == "llama2-paper":
-            prompt += '<<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature. If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don\'t know the answer to a question, please don\'t share false information.\n<</SYS>>\n\n'
+            prompt += '<<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature. If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don\'t know the answer to a question, please don\'t share false information.\n<</SYS>>\n\n'
         prompt += f'{question["body"]}\n\nA. {question["A"]}\nB. {question["B"]}\nC. {question["C"]}\nD. {question["D"]}\nE. {question["E"]}\n[/INST]'
         return prompt

@@ -4,18 +4,18 @@ import time
 import torch
 from models import LLAMA2
 from exam import ENEM
-import pandas as pd
 
 """
-Experimental Design Tentative
-    - Model varies across Llama-2 (3 versions - 7B, 13B, 70B), MISTRAL, Sabia, (ChatGPT? GPT4? Huggingface models?)
-    - Consistency of Machines as compared to Humans
-        - Different ways of asking same questions
-    - Robustness of Consistency of Machines
-        - Different ways of asking same questions
-        - When we find that certain cases are not robust, can we improve robustness (and possibly consistency) by using a consensus?
-    - Prompting: basic, CoT, 
-        - Does CoT improve robustness of consistency?
+LLAMA2 model config (7B):
+GenerationConfig {
+  "bos_token_id": 1,
+  "do_sample": true,
+  "eos_token_id": 2,
+  "max_length": 4096,
+  "pad_token_id": 0,
+  "temperature": 0.6,
+  "top_p": 0.9
+}
 """
 
 # Create an argparser
