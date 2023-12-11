@@ -24,7 +24,7 @@ GenerationConfig {
 # Create an argparser
 parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 parser.add_argument('--model', type=str, choices=["llama2"], required=True, help='Model to run')
-parser.add_argument('--model_size', type=str, choices=["7b"], required=True, help='Model size')
+parser.add_argument('--model_size', type=str, choices=["7b", "13b"], required=True, help='Model size')
 parser.add_argument('--enem_exam', type=str, required=True, help='ENEM exam to run')
 parser.add_argument('--temperature', type=float, default=0.6, help='Temperature')
 parser.add_argument('--answer_order', type=str, default="ABCDE", help='Answer order')
@@ -82,6 +82,7 @@ for i in range(enem.get_enem_size()):
     question = enem.get_question(i)
     correct_answer = enem.get_correct_answer(i)
 
+    # TODO: check if I have to skip anulled questions and how I should do it
     if correct_answer == "anulada":
         continue # Skip anulled questions
 
@@ -112,7 +113,7 @@ filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.tempe
 df = pd.DataFrame({"MODEL_NAME": [args.model], "MODEL_SIZE": [args.model_size], "TEMPERATURE": [args.temperature], "ANSWER_ORDER": [args.answer_order], "QUESTION_ORDER": [args.question_order], "SEED": [args.seed], "PROMPT_TYPE": [args.system_prompt_type], "CTT_SCORE": [ctt_score], "CO_PROVA": [args.enem_exam], "TX_RESPOSTAS": [model_response_pattern], "TX_GABARITO": [correct_response_pattern], "RESPONSE_PATTERN": [model_response_binary_pattern], "TOTAL_RUN_TIME_SEC": [end_time-start_time], "AVG_RUN_TIME_PER_ITEM_SEC": [(end_time-start_time)/enem.get_enem_size()]})
 df.to_parquet(filename)
 
-# Saving the full answers to a parquet file
+# Saving the full answers to a parquet file (each answer is a row)
 filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.enem_exam}-{args.answer_order}-{args.question_order}-{args.seed}-{args.system_prompt_type}-full-answers.parquet"
-df = pd.DataFrame({"FULL_ANSWERS": [full_answers]})
+df = pd.DataFrame({"FULL_ANSWER": full_answers})
 df.to_parquet(filename)
