@@ -98,6 +98,7 @@ for i in range(enem.get_enem_size()):
         model_response_pattern += "V"
         correct_response_pattern += "V"
         model_response_binary_pattern += "0"
+        full_answers.append("anulada")
         continue
 
     model_answer, model_full_answer = model.get_answer_from_question(question, system_prompt_type=args.system_prompt_type)

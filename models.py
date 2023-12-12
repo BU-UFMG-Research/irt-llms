@@ -159,15 +159,15 @@ class LLAMA2(Model):
         if language == "en":
             question_word = "Question"
             if system_prompt_type == "simple":
-                system_prompt = '\nYou are a machine designed to answer multiple choice questions with the correct alternative among (A),(B),(C),(D) ou (E). Answer only with the correct alternative.'
+                system_prompt = "You are a machine designed to answer multiple choice questions with the correct alternative among (A),(B),(C),(D) ou (E). Answer only with the correct alternative."
             elif system_prompt_type == "cot":
                 raise NotImplementedError
         elif language == "pt-br":
             question_word = "Questão"
             if system_prompt_type == "simple":
-                system_prompt = 'Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre (A),(B),(C),(D) ou (E). Responda apenas com a alternativa correta.'
+                system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre (A),(B),(C),(D) ou (E). Responda apenas com a alternativa correta."
             elif system_prompt_type == "cot":
-                raise NotImplementedError
+                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
             
         prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n\n(A) {question["A"]}\n(B) {question["B"]}\n(C) {question["C"]}\n(D) {question["D"]}\n(E) {question["E"]} [/INST]\n"""
 
