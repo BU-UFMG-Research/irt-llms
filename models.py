@@ -17,6 +17,37 @@ class Model(ABC):
         pass
 
     def parse_answer(self, answer, question):
+        """
+        Parser is not correct. Example:
+
+         Aponte as alternativas que fazem sentido: (A), (B), (C), (D).
+
+        Escolha a alternativa CORRETA: (B) 74,51.
+
+        Justifique: O gráfico mostra que a esperança de vida ao nascer em 2013 foi exatamente a média das registradas nos anos de 2012 e de 2014. Então, a esperança de vida ao nascer em 2014 seria a média das registradas nos anos de 2013 e de 2015. A média de 74,23 e 74,51 é 74,32. Então, a esperança de vida ao nascer em 2014 seria 74,32.
+
+        Resposta: (B) 74,51.
+
+        The answer should be B, but the parser returns A.
+
+        def get_formatted_answer(question, answer):
+            gold = ["A.", "B.", "C.", "D.", "E."][question["gold"]]
+            pred = answer
+
+            # regex processing. Useful for zero-shot
+            match_1 = re.findall(r"(?:|[Ll]etra |[Aa]lternativa )([ABCDE])\.", pred)
+            match_2 = re.findall(r"(?:|[Ll]etra |[Aa]lternativa )([ABCDE])", pred)
+            if len(match_1) > 0:
+                pred = match_1[-1] + "."
+            elif len(match_2) > 0:
+                pred = match_2[-1] + "."
+            else:
+                print(f"Regex failed at processing {pred=}")
+                print(f"{gold=}, {pred=}")
+
+            return pred, gold
+
+        """
         pos_inst = answer.split('[/INST]')[-1]
         ans = pos_inst.strip()
 
@@ -82,6 +113,7 @@ class Model(ABC):
 
         if ans is None and question is not None:
             for option in ['A', 'B', 'C', 'D', 'E']:
+                # TODO: question[option] is not always a string. Fix it.
                 if question[option] in pos_inst:
                     return option
         
@@ -111,7 +143,7 @@ class LLAMA2(Model):
     """
     LLAMA2 model class
     """
-    def __init__(self, model_size, token, device, max_time=120, temperature=0.6, load_4bit=False, random_seed=0):
+    def __init__(self, model_size, token, device, temperature=0.6, quantization=None, random_seed=0):
         """
         Args:
             model_size (str): model size
@@ -120,22 +152,31 @@ class LLAMA2(Model):
         """
         super().__init__()
 
-        if load_4bit:
-            self.bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.bfloat16
-            )
-
-        self.tokenizer = LlamaTokenizer.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)
-        if load_4bit:
+        if quantization is not None:
+            if quantization == "4bit":
+                self.bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.bfloat16
+                )
+            elif quantization == "8bit":
+                self.bnb_config = BitsAndBytesConfig(
+                    load_in_8bit=True,
+                    bnb_8bit_use_double_quant=True,
+                    bnb_8bit_quant_type="nf8",
+                    bnb_8bit_compute_dtype=torch.float16
+                )
+            else:
+                raise Exception("Invalid load mode. Please choose between 4bit and 8bit.")
+            
             self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token, device_map="auto", quantization_config=self.bnb_config)
         else:
             self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token, device_map="auto", torch_dtype=torch.float16)
+
+        self.tokenizer = LlamaTokenizer.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)            
         self.model_size = model_size
         self.device = device
-        self.max_time = max_time # Max time in seconds to generate an answer
         self.temperature = temperature
         self.seed = random_seed
         set_seed(random_seed)
@@ -146,7 +187,7 @@ class LLAMA2(Model):
         """
         prompt = self.create_prompt(question, system_prompt_type)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
-        outputs = self.model.generate(inputs, temperature=self.temperature, max_time=self.max_time) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
+        outputs = self.model.generate(inputs, temperature=self.temperature) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
         full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
         return self.parse_answer(full_answer, question), full_answer
     
@@ -178,12 +219,11 @@ class Mistral(Model):
     Mistral model class
     """
 
-    def __init__(self, token, device, max_time=120, temperature=0.6, random_seed=0):
+    def __init__(self, token, device, temperature=0.6, random_seed=0):
         super().__init__()
         self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token)
         self.model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token, device_map="auto", torch_dtype=torch.float16)
         self.device = device
-        self.max_time = max_time
         self.temperature = temperature
         self.seed = random_seed
         set_seed(random_seed)
@@ -194,7 +234,7 @@ class Mistral(Model):
         """
         prompt = self.create_prompt(question, system_prompt_type)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
-        outputs = self.model.generate(inputs, temperature=self.temperature, max_time=self.max_time, do_sample=True, top_p=0.9, top_k=0, max_length=4096)
+        outputs = self.model.generate(inputs, temperature=self.temperature, do_sample=True, top_p=0.9, top_k=0, max_length=4096, pad_token_id=self.tokenizer.eos_token_id)
         full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
         return self.parse_answer(full_answer, question), full_answer
     
@@ -215,7 +255,7 @@ class Mistral(Model):
             if system_prompt_type == "simple":
                 system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre (A),(B),(C),(D) ou (E). Responda apenas com a alternativa correta."
             elif system_prompt_type == "cot":
-                raise NotImplementedError
+                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
             
         prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n\n(A) {question["A"]}\n(B) {question["B"]}\n(C) {question["C"]}\n(D) {question["D"]}\n(E) {question["E"]} [/INST]"""
 
