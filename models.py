@@ -133,8 +133,7 @@ class Model(ABC):
 
         if ans is None and question is not None:
             for option in ['A', 'B', 'C', 'D', 'E']:
-                # TODO: question[option] is not always a string. Fix it.
-                if question[option] in pos_inst:
+                if str(question[option]) in pos_inst:
                     return option
         
         return ans
