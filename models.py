@@ -51,6 +51,26 @@ class Model(ABC):
         pos_inst = answer.split('[/INST]')[-1]
         ans = pos_inst.strip()
 
+        pattern = r'Resposta: ([A-E])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'Resposta: \(([A-E])\)'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'Answer: ([A-E])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'Answer: \(([A-E])\)'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+
         pattern = r'answer is ([A-E])'
         match = re.search(pattern, ans)
         if match:
@@ -121,24 +141,6 @@ class Model(ABC):
 
 
 # Define LLAMA2 model class
-
-"""
-4 bit quantization code
-
-from transformers import BitsAndBytesConfig
-
-
-nf4_config = BitsAndBytesConfig(
-   load_in_4bit=True,
-   bnb_4bit_quant_type="nf4",
-   bnb_4bit_use_double_quant=True,
-   bnb_4bit_compute_dtype=torch.bfloat16
-)
-
-model_nf4 = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=nf4_config)
-
-
-"""
 class LLAMA2(Model):
     """
     LLAMA2 model class

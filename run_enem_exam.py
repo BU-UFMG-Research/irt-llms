@@ -84,6 +84,8 @@ ctt_score = 0
 start_time = time.time()
 
 full_answers = []
+correct_answers = []
+parsed_answers = []
 
 for i in range(enem.get_enem_size()):
     print(f"Question {i}")
@@ -104,6 +106,8 @@ for i in range(enem.get_enem_size()):
     # Remove the prompt from the full answer
     model_full_answer = model_full_answer.split("[/INST]")[-1]
     full_answers.append(model_full_answer)
+    correct_answers.append(correct_answer)
+    parsed_answers.append(model_answer)
 
     if model_answer is None or not model_answer in list("ABCDE"):
         # Raise warning when model answer is None
@@ -130,5 +134,5 @@ df.to_parquet(filename)
 
 # Saving the full answers to a parquet file (each answer is a row)
 filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.enem_exam}-{args.answer_order}-{args.question_order}-{args.seed}-{args.system_prompt_type}-{args.language}-full-answers.parquet"
-df = pd.DataFrame({"FULL_ANSWER": full_answers})
+df = pd.DataFrame({"CORRECT_ANSWER": correct_answers, "PARSED_ANSWER": parsed_answers, "FULL_ANSWER": full_answers})
 df.to_parquet(filename)
