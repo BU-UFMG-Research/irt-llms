@@ -42,20 +42,20 @@ do
     done
 done
 
-# index=$(($SGE_TASK_ID-1))
-# read -ra taskinput <<< "${params[$index]}" # str is read into an array as tokens separated by IFS
+index=$(($SGE_TASK_ID-1))
+read -ra taskinput <<< "${params[$index]}" # str is read into an array as tokens separated by IFS
 
-# source .bashrc
-# module load python3/3.10.12
-# module load gcc/12.2
-# module load cuda/11.8
-# source /project/mcnet/venv3.10/bin/activate
-# cd /projectnb/mcnet/irt-llms
+source .bashrc
+module load python3/3.10.12
+module load gcc/12.2
+module load cuda/11.8
+source /project/mcnet/venv3.10/bin/activate
+cd /projectnb/mcnet/irt-llms
 
-# python3 run_enem_exam.py --model ${taskinput[0]} --model_size ${taskinput[1]} --enem_exam ${taskinput[2]} --system_prompt_type ${taskinput[3]}
+python3 run_enem_exam.py --model ${taskinput[0]} --model_size ${taskinput[1]} --enem_exam ${taskinput[2]} --system_prompt_type ${taskinput[3]}
 
-index=1
-for i in "${params[@]}"; do # access each element of array
-   echo "$index: $i"
-   index=$((index+1))
-done
+# index=1
+# for i in "${params[@]}"; do # access each element of array
+#    echo "$index: $i"
+#    index=$((index+1))
+# done
