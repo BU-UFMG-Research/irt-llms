@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 from models import LLAMA2, Mistral
 from exam import ENEM
+from transformers import set_seed
 
 """
 LLAMA2 model config (7B, 13B, 70B):
@@ -34,6 +35,9 @@ parser.add_argument("--language", type=str, default="pt-br", choices=["pt-br", "
 parser.add_argument("--seed", type=int, default=42, help="Random seed")
 
 args = parser.parse_args()
+
+# Set seed
+set_seed(args.seed)
 
 # Check answer order
 if len(args.answer_order) != 5 or "A" not in args.answer_order or "B" not in args.answer_order or "C" not in args.answer_order or "D" not in args.answer_order or "E" not in args.answer_order:
