@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import re
-from transformers import LlamaForCausalLM , LlamaTokenizer, set_seed
+from transformers import LlamaForCausalLM , LlamaTokenizer, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, set_seed
+import torch
 
 # Define abstract model class
 class Model(ABC):
@@ -15,11 +16,126 @@ class Model(ABC):
     def create_prompt(self, question, system_prompt_type=None):
         pass
 
-    def parse_answer(self, answer):
-        ans = re.search('\([ABCDE]\)',answer).group().lstrip('(').rstrip(')') if re.search('\([ABCDE]\)',answer) else None
+    def parse_answer(self, answer, question):
+        """
+        Parser is not correct. Example:
+
+         Aponte as alternativas que fazem sentido: (A), (B), (C), (D).
+
+        Escolha a alternativa CORRETA: (B) 74,51.
+
+        Justifique: O gráfico mostra que a esperança de vida ao nascer em 2013 foi exatamente a média das registradas nos anos de 2012 e de 2014. Então, a esperança de vida ao nascer em 2014 seria a média das registradas nos anos de 2013 e de 2015. A média de 74,23 e 74,51 é 74,32. Então, a esperança de vida ao nascer em 2014 seria 74,32.
+
+        Resposta: (B) 74,51.
+
+        The answer should be B, but the parser returns A.
+
+        def get_formatted_answer(question, answer):
+            gold = ["A.", "B.", "C.", "D.", "E."][question["gold"]]
+            pred = answer
+
+            # regex processing. Useful for zero-shot
+            match_1 = re.findall(r"(?:|[Ll]etra |[Aa]lternativa )([ABCDE])\.", pred)
+            match_2 = re.findall(r"(?:|[Ll]etra |[Aa]lternativa )([ABCDE])", pred)
+            if len(match_1) > 0:
+                pred = match_1[-1] + "."
+            elif len(match_2) > 0:
+                pred = match_2[-1] + "."
+            else:
+                print(f"Regex failed at processing {pred=}")
+                print(f"{gold=}, {pred=}")
+
+            return pred, gold
+
+        """
+        pos_inst = answer.split('[/INST]')[-1]
+        ans = pos_inst.strip()
+
+        pattern = r'Resposta: ([A-E])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'Resposta: \(([A-E])\)'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'Answer: ([A-E])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'Answer: \(([A-E])\)'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+
+        pattern = r'answer is ([A-E])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'answer is \(([A-E])\)'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'Answer: ([ABCDE])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'A resposta correta é (\w):'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'[Tt]he answer is ([A-E])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'answer is \(([A-E])\)'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+            
+        pattern = r'A resposta correta é (\w) '
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+
+        pattern = r'A resposta certa é (\w):'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+        
+        pattern = r'option ([A-E])'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+
+        if re.match(r"^(A|B|C|D|E)$", ans):
+            return ans
+        
+        pattern = r'\(([A-E])\)'
+        match = re.search(pattern, ans)
+        if match:
+            return match.group(1)
+    
+        ans = re.search('[ABCDE]\.',ans).group().rstrip('.') if re.search('[ABCDE]\.',ans) else None
+        
         if ans is None:
-            ans = answer.split('[/INST]')[-1]
-            ans = re.search('[ABCDE]\.',ans).group().rstrip('.') if re.search('[ABCDE]\.',ans) else None
+            pos_inst = answer.split('[/INST]')[-1]
+            ans = pos_inst.strip()
+            ans = re.search('[ABCDE]\)',ans).group().rstrip(')') if re.search('[ABCDE]\)',ans) else None
+
+        if ans is None and question is not None:
+            for option in ['A', 'B', 'C', 'D', 'E']:
+                if str(question[option]) in pos_inst:
+                    return option
+        
         return ans
 
 
@@ -27,19 +143,8 @@ class Model(ABC):
 class LLAMA2(Model):
     """
     LLAMA2 model class
-
-    Attributes:
-        model_size (str): model size
-        token (str): token
-        device (str): device
-        tokenizer (LlamaTokenizer): tokenizer
-        model (LlamaForCausalLM): model
-    
-    Methods:
-        get_answer_from_prompt: get answer from prompt
-        parse_answer: parse answer
     """
-    def __init__(self, model_size, token, device, random_seed=0):
+    def __init__(self, model_size, token, device, temperature=0.6, quantization=None, random_seed=0):
         """
         Args:
             model_size (str): model size
@@ -47,43 +152,116 @@ class LLAMA2(Model):
             device (str): device
         """
         super().__init__()
-        self.tokenizer = LlamaTokenizer.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)
-        self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)
+
+        if quantization is not None:
+            if quantization == "4bit":
+                self.bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.bfloat16
+                )
+            elif quantization == "8bit":
+                self.bnb_config = BitsAndBytesConfig(
+                    load_in_8bit=True,
+                    bnb_8bit_use_double_quant=True,
+                    bnb_8bit_quant_type="nf8",
+                    bnb_8bit_compute_dtype=torch.float16
+                )
+            else:
+                raise Exception("Invalid load mode. Please choose between 4bit and 8bit.")
+            
+            self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token, device_map="auto", quantization_config=self.bnb_config)
+        else:
+            self.model = LlamaForCausalLM.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token, device_map="auto", torch_dtype=torch.float16)
+
+        self.tokenizer = LlamaTokenizer.from_pretrained(f"meta-llama/Llama-2-{model_size}-chat-hf", token=token)            
         self.model_size = model_size
         self.device = device
-        self.model.to(device)
+        self.temperature = temperature
+        self.seed = random_seed
         set_seed(random_seed)
-        print("Model config: ")
-        print(self.model.config)
-        print("Generation config: ")
-        print(self.model.generation_config)
 
-    def get_answer_from_question(self, question, temperature=0.1, system_prompt_type=None):
+    def get_answer_from_question(self, question, system_prompt_type=None):
         """
         Get answer from question
-
-        Args:
-            question (dict): ENEM question
-            temperature (float): temperature
-            system_prompt_type (str): system prompt type (simple, chain-of-thought, llama2-paper). None for no system prompt
-
-        Returns:
-            str: parsed answer
         """
         prompt = self.create_prompt(question, system_prompt_type)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
-        outputs = self.model.generate(inputs, temperature=temperature) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
+        outputs = self.model.generate(inputs, temperature=self.temperature) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
         full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
-        return self.parse_answer(full_answer)
+        return self.parse_answer(full_answer, question), full_answer
     
-    def create_prompt(self, question, system_prompt_type=None):
-        # For the multi-turn prompt, we need to add <s> and </s> tokens
-        prompt = '[INST] '
-        if system_prompt_type == "simple":
-            prompt += '<<SYS>>\nYou are a machine designed to answer multiple choice questions with the correct alternative among A,B,C,D or E. Answer only with the correct alternative.\n<</SYS>>\n\n'
-        elif system_prompt_type == "chain-of-though":
-            raise NotImplementedError
-        elif system_prompt_type == "llama2-paper":
-            prompt += '<<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature. If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don\'t know the answer to a question, please don\'t share false information.\n<</SYS>>\n\n'
-        prompt += f'{question["body"]}\n\nA. {question["A"]}\nB. {question["B"]}\nC. {question["C"]}\nD. {question["D"]}\nE. {question["E"]}\n[/INST]'
+    def create_prompt(self, question, system_prompt_type=None, language="pt-br"):
+        """
+        Create prompt
+        """
+        # For the multi-turn prompt, we need to add <s> and </s> tokens and concatenate the previous turns
+
+        if language == "en":
+            question_word = "Question"
+            if system_prompt_type == "simple":
+                system_prompt = "You are a machine designed to answer multiple choice questions with the correct alternative among (A),(B),(C),(D) ou (E). Answer only with the correct alternative."
+            elif system_prompt_type == "cot":
+                raise NotImplementedError
+        elif language == "pt-br":
+            question_word = "Questão"
+            if system_prompt_type == "simple":
+                system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre (A),(B),(C),(D) ou (E). Responda apenas com a alternativa correta."
+            elif system_prompt_type == "cot":
+                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
+            
+        prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n\n(A) {question["A"]}\n(B) {question["B"]}\n(C) {question["C"]}\n(D) {question["D"]}\n(E) {question["E"]} [/INST]\n"""
+
         return prompt
+    
+class Mistral(Model):
+    """
+    Mistral model class
+    """
+
+    def __init__(self, token, device, temperature=0.6, random_seed=0):
+        super().__init__()
+        self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token)
+        self.model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token, device_map="auto", torch_dtype=torch.float16)
+        self.device = device
+        self.temperature = temperature
+        self.seed = random_seed
+        set_seed(random_seed)
+
+    def get_answer_from_question(self, question, system_prompt_type=None):
+        """
+        Get answer from question
+        """
+        prompt = self.create_prompt(question, system_prompt_type)
+        inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
+        outputs = self.model.generate(inputs, temperature=self.temperature, do_sample=True, top_p=0.9, top_k=0, max_length=4096, pad_token_id=self.tokenizer.eos_token_id)
+        full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
+        return self.parse_answer(full_answer, question), full_answer
+    
+    def create_prompt(self, question, system_prompt_type=None, language="pt-br"):
+        """
+        Create prompt
+        """
+        # For the multi-turn prompt, we need to add <s> and </s> tokens and concatenate the previous turns
+
+        if language == "en":
+            question_word = "Question"
+            if system_prompt_type == "simple":
+                system_prompt = "You are a machine designed to answer multiple choice questions with the correct alternative among (A),(B),(C),(D) ou (E). Answer only with the correct alternative."
+            elif system_prompt_type == "cot":
+                raise NotImplementedError
+        elif language == "pt-br":
+            question_word = "Questão"
+            if system_prompt_type == "simple":
+                system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre (A),(B),(C),(D) ou (E). Responda apenas com a alternativa correta."
+            elif system_prompt_type == "cot":
+                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
+            
+        prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n\n(A) {question["A"]}\n(B) {question["B"]}\n(C) {question["C"]}\n(D) {question["D"]}\n(E) {question["E"]} [/INST]"""
+
+        return prompt
+
+
+
+

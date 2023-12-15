@@ -1,5 +1,6 @@
 venv/
 .DS_Store
+enem-experiments-results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

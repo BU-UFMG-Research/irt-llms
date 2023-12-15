@@ -1,8 +1,8 @@
 import pandas as pd
 
 class ENEM():
-    def __init__(self, enem_exam, answer_order="ABCDE", question_order="random", seed=42):
-        self.df_enem = pd.read_csv(f"data/parsed-enem-exams/{enem_exam}.csv")
+    def __init__(self, enem_exam, answer_order="ABCDE", question_order="random", seed=42, language="pt-br"):
+        self.df_enem = pd.read_csv(f"data/parsed-enem-exams/{language}/{enem_exam}.csv")
         self.answer_order = list(answer_order)
         original_order = list("ABCDE")
         # Map the answer in the original order to the answer in the answer_order
