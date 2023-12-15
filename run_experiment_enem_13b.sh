@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 720 tasks
-#$ -t 1-2
+#$ -t 1-1
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -32,7 +32,7 @@ do
     do
         for enem_exam in "ENEM_2022_MT_CO_PROVA_1082"
 		do
-            for system_prompt_type in "simple" "cot"
+            for system_prompt_type in "cot"
             do
                 params[idx]=$model$IFS$model_size$IFS$enem_exam$IFS$system_prompt_type
                 ((idx++))
