@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-files = glob.glob("enem-experiments-results/*7b*pt-br.parquet") #TODO: change to get all files
+files = glob.glob("enem-experiments-results/*pt-br.parquet")
 files.sort()
 
 new_df = None
@@ -16,3 +16,5 @@ for file in files:
         new_df = pd.concat([new_df, df]).reset_index(drop=True)
 
 new_df.to_parquet("enem-experiments-results-processed.parquet")
+
+print(new_df)
