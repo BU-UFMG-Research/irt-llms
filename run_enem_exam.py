@@ -5,7 +5,7 @@ import argparse
 import time
 import pandas as pd
 import torch
-from models import LLAMA2, Mistral
+from models import LLAMA2, Mistral, RandomModel
 from exam import ENEM
 from transformers import set_seed
 
@@ -24,24 +24,24 @@ GenerationConfig {
 
 # Create an argparser
 parser = argparse.ArgumentParser(description='Run model on ENEM exam')
-parser.add_argument('--model', type=str, choices=["llama2", "mistral"], required=True, help='Model to run')
-parser.add_argument('--model_size', type=str, choices=["7b", "13b"], required=True, help='Model size')
+# LLMs args
+parser.add_argument('--model', type=str, choices=["llama2", "mistral", "random"], required=True, help='Model to run')
+parser.add_argument('--model_size', type=str, choices=["7b", "13b"], help='Model size')
+parser.add_argument('--temperature', type=float, help='Temperature')
+parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot"], help='System prompt type')
+# ENEM args
 parser.add_argument('--enem_exam', type=str, required=True, help='ENEM exam to run')
-parser.add_argument('--temperature', type=float, default=0.6, help='Temperature')
-parser.add_argument('--answer_order', type=str, default="ABCDE", help='Answer order')
-parser.add_argument('--question_order', type=str, default="original", choices=["original", "random"], help='Question order on ENEM exam. In random order, questions are shuffled using the seed to control the randomness')
-parser.add_argument('--system_prompt_type', type=str, default="simple", choices=["simple", "cot"], help='System prompt type')
-parser.add_argument("--language", type=str, default="pt-br", choices=["pt-br", "en"], help="Language of the exam")
-parser.add_argument("--seed", type=int, default=42, help="Random seed")
+parser.add_argument('--exam_type', type=str, help='ENEM exam type. It can be the default exam or a shuffled exam. If shuffled, the seed is used to control the randomness')
+parser.add_argument('--question_order', default="original", type=str, choices=["original", "random"], help='Question order on ENEM exam. In random order, questions are shuffled using the seed to control the randomness')
+parser.add_argument("--language", type=str, choices=["pt-br", "en"], help="Language of the exam")
+parser.add_argument("--number_options", type=int, choices=range(2, 6), help="Number of options to use in the exam")
+# Other args
+parser.add_argument("--seed", type=int, required=True, help="Random seed")
 
 args = parser.parse_args()
 
 # Set seed
 set_seed(args.seed)
-
-# Check answer order
-if len(args.answer_order) != 5 or "A" not in args.answer_order or "B" not in args.answer_order or "C" not in args.answer_order or "D" not in args.answer_order or "E" not in args.answer_order:
-    raise Exception("Answer order must be 5 letters, e.g. ABCDE")
 
 # Token: HF_TOKEN env variable
 token = os.getenv("HF_TOKEN")
@@ -49,21 +49,24 @@ token = os.getenv("HF_TOKEN")
 # Print args
 print("Model: ", args.model)
 print("Model size: ", args.model_size)
-print("ENEM exam: ", args.enem_exam)
 print("Temperature: ", args.temperature)
-print("Answer order: ", args.answer_order)
-print("Question order: ", args.question_order)
 print("System prompt type: ", args.system_prompt_type)
+print("ENEM exam: ", args.enem_exam)
+print("Exam type: ", args.exam_type)
+print("Question order: ", args.question_order)
 print("Language: ", args.language)
+print("Number of options: ", args.number_options)
 print("Seed: ", args.seed)
 print("\n------------------\n")
+
+print("Execution started\n")
 
 
 # Get pytorch device
 device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
 # Load ENEM exam
-enem = ENEM(args.enem_exam, answer_order=args.answer_order, question_order=args.question_order, seed=args.seed, language=args.language)
+enem = ENEM(args.enem_exam, exam_type=args.exam_type, question_order=args.question_order, seed=args.seed, language=args.language, number_options=args.number_options)
 
 # Load model
 if args.model == "llama2":
@@ -73,6 +76,8 @@ elif args.model == "mistral":
         model = Mistral(token, device, temperature=args.temperature, random_seed=args.seed)
     else:
         raise Exception("Model size not implemented for Mistral")
+elif args.model == "random":
+    model = RandomModel()
 else:
     raise Exception("Model not implemented")
 
@@ -97,6 +102,29 @@ for i in range(enem.get_enem_size()):
     question = enem.get_question(i)
     correct_answer = enem.get_correct_answer(i)
 
+    # options = question["options"]
+    # options_letters = sorted(list(options.keys()))
+
+    # system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre "
+    # for option in options_letters[:-1]:
+    #     system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
+    # system_prompt += f"ou ({options_letters[-1]}). Responda apenas com a alternativa correta."
+    # question_word = "Questão"
+
+    # #prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n\n(A) {question["A"]}\n(B) {question["B"]}\n(C) {question["C"]}\n(D) {question["D"]}\n(E) {question["E"]} [/INST]"""
+
+    # prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n\n"""
+    # for option in options_letters:
+    #     prompt += f"({option}) {options[option]}\n"
+    # prompt += f"[/INST]"""
+
+    # print("Correct answer: ", correct_answer)
+
+    # print()
+    # print(prompt)
+    # a = input()
+    # continue
+
     if correct_answer == "anulada":
         # Voided question
         model_response_pattern += "V"
@@ -106,14 +134,19 @@ for i in range(enem.get_enem_size()):
         correct_answers.append("anulada")
         parsed_answers.append("anulada")
         continue
-
+    
     model_answer, model_full_answer = model.get_answer_from_question(question, system_prompt_type=args.system_prompt_type)
     
     # Remove the prompt from the full answer
-    model_full_answer = model_full_answer.split("[/INST]")[-1]
-    full_answers.append(model_full_answer)
-    correct_answers.append(correct_answer)
-    parsed_answers.append(model_answer)
+    if "[/INST]" in model_full_answer:
+        model_full_answer = model_full_answer.split("[/INST]")[-1]
+        full_answers.append(model_full_answer)
+        correct_answers.append(correct_answer)
+        parsed_answers.append(model_answer)
+    else:
+        full_answers.append(model_full_answer)
+        correct_answers.append(correct_answer)
+        parsed_answers.append(model_answer)
 
     if model_answer is None or not model_answer in list("ABCDE"):
         # Raise warning when model answer is None
@@ -133,12 +166,14 @@ for i in range(enem.get_enem_size()):
 
 end_time = time.time()
 
-# Save results to file
-filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.enem_exam}-{args.answer_order}-{args.question_order}-{args.seed}-{args.system_prompt_type}-{args.language}.parquet"
-df = pd.DataFrame({"MODEL_NAME": [args.model], "MODEL_SIZE": [args.model_size], "TEMPERATURE": [args.temperature], "ANSWER_ORDER": [args.answer_order], "QUESTION_ORDER": [args.question_order], "SEED": [args.seed], "PROMPT_TYPE": [args.system_prompt_type], "CTT_SCORE": [ctt_score], "CO_PROVA": [args.enem_exam], "TX_RESPOSTAS": [model_response_pattern], "TX_GABARITO": [correct_response_pattern], "RESPONSE_PATTERN": [model_response_binary_pattern], "TOTAL_RUN_TIME_SEC": [end_time-start_time], "AVG_RUN_TIME_PER_ITEM_SEC": [(end_time-start_time)/enem.get_enem_size()], "LANGUAGE": [args.language]})
+# Save results to file (in the order of the arguments)
+filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.system_prompt_type}-{args.enem_exam}-{args.exam_type}-{args.question_order}-{args.language}-{args.number_options}-{args.seed}.parquet"
+df = pd.DataFrame({"MODEL_NAME": [args.model], "MODEL_SIZE": [args.model_size], "TEMPERATURE": [args.temperature], "SYSTEM_PROMPT_TYPE": [args.system_prompt_type], "ENEM_EXAM": [args.enem_exam], "ENEM_EXAM_TYPE": [args.exam_type], "QUESTION_ORDER": [args.question_order], "LANGUAGE": [args.language], "NUMBER_OPTIONS": [args.number_options], "SEED": [args.seed], "CTT_SCORE": [ctt_score], "TX_RESPOSTAS": [model_response_pattern], "TX_GABARITO": [correct_response_pattern], "RESPONSE_PATTERN": [model_response_binary_pattern], "TOTAL_RUN_TIME_SEC": [end_time-start_time], "AVG_RUN_TIME_PER_ITEM_SEC": [(end_time-start_time)/enem.get_enem_size()]})
 df.to_parquet(filename)
 
-# Saving the full answers to a parquet file (each answer is a row)
-filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.enem_exam}-{args.answer_order}-{args.question_order}-{args.seed}-{args.system_prompt_type}-{args.language}-full-answers.parquet"
+# # Saving the full answers to a parquet file (each answer is a row)
+filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.system_prompt_type}-{args.enem_exam}-{args.exam_type}-{args.question_order}-{args.language}-{args.number_options}-{args.seed}-full-answers.parquet"
 df = pd.DataFrame({"CORRECT_ANSWER": correct_answers, "PARSED_ANSWER": parsed_answers, "FULL_ANSWER": full_answers})
 df.to_parquet(filename)
+
+print("Execution finished\n")

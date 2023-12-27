@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 44 tasks
-#$ -t 1-44
+#$ -t 1-20
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -30,15 +30,29 @@ for model in "llama2" "mistral"
 do
     for model_size in "7b"
     do
-        # Missing ENEM_2022_MT_CO_PROVA_1082 - need to fix
-        for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062" "ENEM_2017_CH_CO_PROVA_408" "ENEM_2017_CN_CO_PROVA_407" "ENEM_2017_LC_CO_PROVA_409" "ENEM_2017_MT_CO_PROVA_410" "ENEM_2018_CH_CO_PROVA_464" "ENEM_2018_CN_CO_PROVA_463" "ENEM_2018_LC_CO_PROVA_465" "ENEM_2018_MT_CO_PROVA_466"
-		do
+        for temperature in "0.6"
+        do
             for system_prompt_type in "simple" "cot"
             do
-                params[idx]=$model$IFS$model_size$IFS$enem_exam$IFS$system_prompt_type
-                ((idx++))
-            done
-		done
+                for enem_exam in "ENEM_2023_CH_CO_PROVA_0" "ENEM_2023_CN_CO_PROVA_0" "ENEM_2023_LC_CO_PROVA_0" "ENEM_2023_MT_CO_PROVA_0" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062" "ENEM_2017_CH_CO_PROVA_408" "ENEM_2017_CN_CO_PROVA_407" "ENEM_2017_LC_CO_PROVA_409" "ENEM_2017_MT_CO_PROVA_410" "ENEM_2018_CH_CO_PROVA_464" "ENEM_2018_CN_CO_PROVA_463" "ENEM_2018_LC_CO_PROVA_465" "ENEM_2018_MT_CO_PROVA_466"
+                do
+                    for exam_type in "default"
+                    do
+                        for question_order in "original"
+                        do
+                            for language in "pt-br" "en"
+                            do
+                                for seed in "2724839799" "224453832" "1513448043" "745130168" "730262723"
+                                do
+                                    params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$seed
+                                    ((idx++))
+                                done
+                            done
+                        done
+                    done
+                done 
+            done 
+        done
     done
 done
 
@@ -52,7 +66,7 @@ module load cuda/11.8
 source /project/mcnet/venv3.10/bin/activate
 cd /projectnb/mcnet/irt-llms
 
-python3 run_enem_exam.py --model ${taskinput[0]} --model_size ${taskinput[1]} --enem_exam ${taskinput[2]} --system_prompt_type ${taskinput[3]}
+python3 run_enem_exam.py --model ${taskinput[0]} --model_size ${taskinput[1]} --temperature ${taskinput[2]} --system_prompt_type ${taskinput[3]} --enem_exam ${taskinput[4]} --exam_type ${taskinput[5]} --question_order ${taskinput[6]} --language ${taskinput[7]}
 
 # index=1
 # for i in "${params[@]}"; do # access each element of array

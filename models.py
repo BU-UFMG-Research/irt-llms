@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import re
 from transformers import LlamaForCausalLM , LlamaTokenizer, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, set_seed
 import torch
+import numpy as np
 
 # Define abstract model class
 class Model(ABC):
@@ -15,6 +16,29 @@ class Model(ABC):
     @abstractmethod
     def create_prompt(self, question, system_prompt_type=None):
         pass
+
+    def get_system_prompt(self, system_prompt_type, language, options_letters):
+        if language == "en":
+            if system_prompt_type == "simple":
+                # Create system_prompt using options_letters
+                system_prompt = "You are a machine designed to answer multiple choice questions with the correct alternative among "
+                for option in options_letters[:-1]:
+                    system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
+                system_prompt += f"or ({options_letters[-1]}). Answer only with the correct alternative."    
+            elif system_prompt_type == "cot":
+                raise NotImplementedError
+        elif language == "pt-br":
+            if system_prompt_type == "simple":
+                # Create system_prompt using options_letters
+                system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre "
+                for option in options_letters[:-1]:
+                   system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
+                system_prompt += f"ou ({options_letters[-1]}). Responda apenas com a alternativa correta."
+            elif system_prompt_type == "cot":
+                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
+
+        return system_prompt
+
 
     def parse_answer(self, answer, question):
         """
@@ -196,22 +220,15 @@ class LLAMA2(Model):
         """
         Create prompt
         """
-        # For the multi-turn prompt, we need to add <s> and </s> tokens and concatenate the previous turns
-
-        if language == "en":
-            question_word = "Question"
-            if system_prompt_type == "simple":
-                system_prompt = "You are a machine designed to answer multiple choice questions with the correct alternative among (A),(B),(C),(D) ou (E). Answer only with the correct alternative."
-            elif system_prompt_type == "cot":
-                raise NotImplementedError
-        elif language == "pt-br":
-            question_word = "Questão"
-            if system_prompt_type == "simple":
-                system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre (A),(B),(C),(D) ou (E). Responda apenas com a alternativa correta."
-            elif system_prompt_type == "cot":
-                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
-            
-        prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n\n(A) {question["A"]}\n(B) {question["B"]}\n(C) {question["C"]}\n(D) {question["D"]}\n(E) {question["E"]} [/INST]\n"""
+        # For the multi-turn prompt, we need to add <s> and </s> tokens and concatenate the previous turns        
+        options = question["options"]
+        options_letters = sorted(list(options.keys()))
+        system_prompt = self.get_system_prompt(system_prompt_type, language, options_letters)
+        question_word = "Questão" if language == "pt-br" else "Question"
+        prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n\n"""
+        for option in options_letters:
+            prompt += f"({option}) {options[option]}\n"
+        prompt += f"[/INST]"""
 
         return prompt
     
@@ -244,24 +261,39 @@ class Mistral(Model):
         Create prompt
         """
         # For the multi-turn prompt, we need to add <s> and </s> tokens and concatenate the previous turns
-
-        if language == "en":
-            question_word = "Question"
-            if system_prompt_type == "simple":
-                system_prompt = "You are a machine designed to answer multiple choice questions with the correct alternative among (A),(B),(C),(D) ou (E). Answer only with the correct alternative."
-            elif system_prompt_type == "cot":
-                raise NotImplementedError
-        elif language == "pt-br":
-            question_word = "Questão"
-            if system_prompt_type == "simple":
-                system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre (A),(B),(C),(D) ou (E). Responda apenas com a alternativa correta."
-            elif system_prompt_type == "cot":
-                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
-            
-        prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n\n(A) {question["A"]}\n(B) {question["B"]}\n(C) {question["C"]}\n(D) {question["D"]}\n(E) {question["E"]} [/INST]"""
+        options = question["options"]
+        options_letters = sorted(list(options.keys()))
+        system_prompt = self.get_system_prompt(system_prompt_type, language, options_letters)
+        question_word = "Questão" if language == "pt-br" else "Question"
+        prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n\n"""
+        for option in options_letters:
+            prompt += f"({option}) {options[option]}\n"
+        prompt += f"[/INST]"""
 
         return prompt
+    
+class RandomModel(Model):
+    """
+    Random baseline model class
+    """
 
+    def __init__(self, random_seed=0):
+        super().__init__()
+        self.random = np.random.RandomState(random_seed)
+        self.seed = random_seed
+
+    def get_answer_from_question(self, question, system_prompt_type=None):
+        """
+        Get answer from question
+        """
+        answer = self.random.choice(list("ABCDE"))
+        return answer, answer
+    
+    def create_prompt(self):
+        """
+        Create prompt
+        """
+        return None
 
 
 

@@ -1,19 +1,8 @@
 import pandas as pd
-
+import numpy as np
 class ENEM():
-    def __init__(self, enem_exam, answer_order="ABCDE", question_order="random", seed=42, language="pt-br"):
-        self.df_enem = pd.read_csv(f"data/parsed-enem-exams/{language}/{enem_exam}.csv")
-        self.answer_order = list(answer_order)
-        original_order = list("ABCDE")
-        # Map the answer in the original order to the answer in the answer_order
-        # We fisrt find the index of the answer in the original order, then we use that index to find the answer in the answer_order
-        # For instance: if the answer is "B", we find the index of "B" in the original order, which is 1. 
-        # Then we use that index to find the answer in the answer_order ("CABDE"), which is "A"
-        # The corner case is where the answer is "anulada" (voided), in which case we just return "anulada"
-        self.df_enem["answer"] = self.df_enem["answer"].apply(lambda x: answer_order[original_order.index(x)] if x in self.answer_order else "anulada")
-
-        # We have columns A, B, C, D, E. Map them to answer_order
-        self.df_enem.rename(columns={"A": self.answer_order[0], "B": self.answer_order[1], "C": self.answer_order[2], "D": self.answer_order[3], "E": self.answer_order[4]}, inplace=True)
+    def __init__(self, enem_exam, exam_type, question_order="random", seed=42, language="pt-br", number_options=5, number_options_method="random"):
+        self.df_enem = pd.read_csv(f"data/parsed-enem-exams/{language}/{exam_type}/{enem_exam}.csv")
 
         # Shuffle questions if necessary
         if question_order == "random":
@@ -22,8 +11,38 @@ class ENEM():
             pass
         else:
             raise Exception("Question order not implemented")
-        
+            
         self.enem_exam = self.df_enem.to_dict(orient='records')
+
+        # Dict has "A", "B", "C", "D", "E" keys. Nest them in a dict ("options")
+        for question in self.enem_exam:
+            options = {}
+            for key in question.keys():
+                if key in ["A", "B", "C", "D", "E"]:
+                    options[key] = question[key]
+            question["options"] = options
+
+        # Remove "A", "B", "C", "D", "E" keys
+        for question in self.enem_exam:
+            for key in ["A", "B", "C", "D", "E"]:
+                del question[key]
+
+        # TODO: Set number of options
+        if number_options >= 2 or number_options <= 4:
+            if number_options_method == "random":
+                random = np.random.RandomState(seed)
+                
+                for question in self.enem_exam:
+                    correct_answer = question["answer"]
+                    candidate_options = ["A", "B", "C", "D", "E"]
+                    candidate_options.remove(correct_answer)
+                    options_to_remove = random.choice(candidate_options, size=5-number_options, replace=False)
+                    for option in options_to_remove:
+                        del question["options"][option]
+            else:
+                raise Exception("Number of options method not implemented")
+        else:
+            raise Exception("Number of options not implemented")
 
     def get_question(self, question_id):
         return self.enem_exam[question_id]
