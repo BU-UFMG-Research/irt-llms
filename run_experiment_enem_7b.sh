@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 44 tasks
-#$ -t 1-20
+#$ -t 1-1
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -20,7 +20,7 @@
 #$ -l gpus=1
 
 # Specify the minimum GPU compute capability. 
-#$ -l gpu_c=7.0
+#$ -l gpu_c=8.0
 
 declare -a params
 idx=0
@@ -42,10 +42,13 @@ do
                         do
                             for language in "pt-br" "en"
                             do
-                                for seed in "2724839799" "224453832" "1513448043" "745130168" "730262723"
+                                for number_options in "5"
                                 do
-                                    params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$seed
-                                    ((idx++))
+                                    for seed in "-1"
+                                    do
+                                        params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$number_options$IFS$seed
+                                        ((idx++))
+                                    done
                                 done
                             done
                         done
@@ -59,17 +62,25 @@ done
 index=$(($SGE_TASK_ID-1))
 read -ra taskinput <<< "${params[$index]}" # str is read into an array as tokens separated by IFS
 
-source .bashrc
 module load python3/3.10.12
 module load gcc/12.2
 module load cuda/11.8
 source /project/mcnet/venv3.10/bin/activate
 cd /projectnb/mcnet/irt-llms
 
-python3 run_enem_exam.py --model ${taskinput[0]} --model_size ${taskinput[1]} --temperature ${taskinput[2]} --system_prompt_type ${taskinput[3]} --enem_exam ${taskinput[4]} --exam_type ${taskinput[5]} --question_order ${taskinput[6]} --language ${taskinput[7]}
+python3 run_enem_exam.py --model ${taskinput[0]} --model_size ${taskinput[1]} --temperature ${taskinput[2]} --system_prompt_type ${taskinput[3]} --enem_exam ${taskinput[4]} --exam_type ${taskinput[5]} --question_order ${taskinput[6]} --language ${taskinput[7]} --number_options ${taskinput[8]} --seed ${taskinput[9]}
 
 # index=1
 # for i in "${params[@]}"; do # access each element of array
 #    echo "$index: $i"
 #    index=$((index+1))
 # done
+
+#python3 run_enem_exam.py --model llama2 --model_size 7b --temperature 0.6 --system_prompt_type simple --enem_exam ENEM_2023_MT_CO_PROVA_0 --exam_type default --question_order original --language pt-br --number_options 5 --seed 2724839799
+
+
+# Test reproducibility
+# python3 run_enem_exam.py --model llama2 --model_size 7b --temperature 1 --system_prompt_type simple --enem_exam ENEM_2023_MT_CO_PROVA_0 --exam_type default --question_order original --language pt-br --number_options 5 --seed 0
+#  A resposta correta é (E) I6. (Running 2 times with seed 0)
+# python3 run_enem_exam.py --model llama2 --model_size 7b --temperature 1 --system_prompt_type simple --enem_exam ENEM_2023_MT_CO_PROVA_0 --exam_type default --question_order original --language pt-br --number_options 5 --seed 1
+#  A resposta correta é (C) H6. (Running 2 times with seed 1)

@@ -27,13 +27,14 @@ class ENEM():
             for key in ["A", "B", "C", "D", "E"]:
                 del question[key]
 
-        # TODO: Set number of options
-        if number_options >= 2 or number_options <= 4:
+        if number_options >= 2 and number_options <= 4:
             if number_options_method == "random":
                 random = np.random.RandomState(seed)
                 
                 for question in self.enem_exam:
                     correct_answer = question["answer"]
+                    if correct_answer == "anulada":
+                        continue
                     candidate_options = ["A", "B", "C", "D", "E"]
                     candidate_options.remove(correct_answer)
                     options_to_remove = random.choice(candidate_options, size=5-number_options, replace=False)
@@ -41,6 +42,8 @@ class ENEM():
                         del question["options"][option]
             else:
                 raise Exception("Number of options method not implemented")
+        elif number_options == 5:
+            pass
         else:
             raise Exception("Number of options not implemented")
 

@@ -14,7 +14,7 @@ class Model(ABC):
         pass
    
     @abstractmethod
-    def create_prompt(self, question, system_prompt_type=None):
+    def create_prompt(self, question, system_prompt_type, language):
         pass
 
     def get_system_prompt(self, system_prompt_type, language, options_letters):
@@ -26,13 +26,13 @@ class Model(ABC):
                     system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
                 system_prompt += f"or ({options_letters[-1]}). Answer only with the correct alternative."    
             elif system_prompt_type == "cot":
-                raise NotImplementedError
+                system_prompt = "Formulate a logical reasoning chain explanation that allows you to answer the multiple-choice question below. Only one alternative is correct.\nDesired format: point out the alternatives that make sense, choose the CORRECT alternative and justify it, and finish justifying why the other alternatives are incorrect. End the explanation with \"Answer: \" followed by the alternative."
         elif language == "pt-br":
             if system_prompt_type == "simple":
                 # Create system_prompt using options_letters
                 system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre "
                 for option in options_letters[:-1]:
-                   system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
+                    system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
                 system_prompt += f"ou ({options_letters[-1]}). Responda apenas com a alternativa correta."
             elif system_prompt_type == "cot":
                 system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
@@ -154,10 +154,10 @@ class Model(ABC):
             pos_inst = answer.split('[/INST]')[-1]
             ans = pos_inst.strip()
             ans = re.search('[ABCDE]\)',ans).group().rstrip(')') if re.search('[ABCDE]\)',ans) else None
-
+        
         if ans is None and question is not None:
             for option in ['A', 'B', 'C', 'D', 'E']:
-                if str(question[option]) in pos_inst:
+                if str(question["options"][option]) in pos_inst:
                     return option
         
         return ans
@@ -206,17 +206,17 @@ class LLAMA2(Model):
         self.seed = random_seed
         set_seed(random_seed)
 
-    def get_answer_from_question(self, question, system_prompt_type=None):
+    def get_answer_from_question(self, question, system_prompt_type, language):
         """
         Get answer from question
         """
-        prompt = self.create_prompt(question, system_prompt_type)
+        prompt = self.create_prompt(question, system_prompt_type, language)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
         outputs = self.model.generate(inputs, temperature=self.temperature) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
         full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
         return self.parse_answer(full_answer, question), full_answer
     
-    def create_prompt(self, question, system_prompt_type=None, language="pt-br"):
+    def create_prompt(self, question, system_prompt_type, language):
         """
         Create prompt
         """
@@ -246,17 +246,17 @@ class Mistral(Model):
         self.seed = random_seed
         set_seed(random_seed)
 
-    def get_answer_from_question(self, question, system_prompt_type=None):
+    def get_answer_from_question(self, question, system_prompt_type, language):
         """
         Get answer from question
         """
-        prompt = self.create_prompt(question, system_prompt_type)
+        prompt = self.create_prompt(question, system_prompt_type, language)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
         outputs = self.model.generate(inputs, temperature=self.temperature, do_sample=True, top_p=0.9, top_k=0, max_length=4096, pad_token_id=self.tokenizer.eos_token_id)
         full_answer = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
         return self.parse_answer(full_answer, question), full_answer
     
-    def create_prompt(self, question, system_prompt_type=None, language="pt-br"):
+    def create_prompt(self, question, system_prompt_type, language):
         """
         Create prompt
         """
@@ -282,7 +282,7 @@ class RandomModel(Model):
         self.random = np.random.RandomState(random_seed)
         self.seed = random_seed
 
-    def get_answer_from_question(self, question, system_prompt_type=None):
+    def get_answer_from_question(self, question, system_prompt_type=None, language=None):
         """
         Get answer from question
         """
@@ -294,6 +294,4 @@ class RandomModel(Model):
         Create prompt
         """
         return None
-
-
-
+    
