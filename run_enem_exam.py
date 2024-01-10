@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 parser.add_argument('--model', type=str, choices=["llama2", "mistral", "random"], required=True, help='Model to run')
 parser.add_argument('--model_size', type=str, choices=["7b", "13b"], help='Model size')
 parser.add_argument('--temperature', type=float, help='Temperature')
-parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot"], help='System prompt type')
+parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot", "few-shot"], help='System prompt type')
 # ENEM args
 parser.add_argument('--enem_exam', type=str, required=True, help='ENEM exam to run')
 parser.add_argument('--exam_type', type=str, help='ENEM exam type. It can be the default exam or a shuffled exam. If shuffled, the seed is used to control the randomness')

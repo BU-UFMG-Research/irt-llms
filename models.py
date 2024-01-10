@@ -27,6 +27,20 @@ class Model(ABC):
                 system_prompt += f"or ({options_letters[-1]}). Answer only with the correct alternative."    
             elif system_prompt_type == "cot":
                 system_prompt = "Formulate a logical reasoning chain explanation that allows you to answer the multiple-choice question below. Only one alternative is correct.\nDesired format: point out the alternatives that make sense, choose the CORRECT alternative and justify it, and finish justifying why the other alternatives are incorrect. End the explanation with \"Answer: \" followed by the alternative."
+            elif system_prompt_type == "few-shot":
+                system_prompt = """
+You will answer a multiple choice question with the following format:
+Question: Roger has 5 tennis balls. He buys 2 more cans of tennis balls. Each can has 3 tennis balls. How many tennis balls does he have now?
+Options:
+(A) 5
+(B) 12
+(C) 7
+(D) 11
+(E) 9
+The answer format should be as follows:
+Answer: (D) 11
+Answer the following question with the format defined above.
+"""
         elif language == "pt-br":
             if system_prompt_type == "simple":
                 # Create system_prompt using options_letters
@@ -36,7 +50,20 @@ class Model(ABC):
                 system_prompt += f"ou ({options_letters[-1]}). Responda apenas com a alternativa correta."
             elif system_prompt_type == "cot":
                 system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
-
+            elif system_prompt_type == "few-shot":
+                system_prompt = """
+Você responderá uma questão de multipla escolha com o seguinte formato:
+Questão: Roger tem 5 bolas de tênis. Ele compra mais 2 latas de bolas de tênis. Cada lata tem 3 bolas de tênis. Quantas bolas de tênis ele tem agora?
+Alternativas:
+(A) 5
+(B) 12
+(C) 7
+(D) 11
+(E) 9
+O formato da resposta deve ser o seguinte:
+Resposta: (D) 11
+Responda a questão a seguir com o formato definido anteriormente.
+"""
         return system_prompt
 
 
@@ -75,90 +102,108 @@ class Model(ABC):
         pos_inst = answer.split('[/INST]')[-1]
         ans = pos_inst.strip()
 
-        pattern = r'Resposta: ([A-E])'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
-        
-        pattern = r'Resposta: \(([A-E])\)'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
-        
-        pattern = r'Answer: ([A-E])'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
-        
-        pattern = r'Answer: \(([A-E])\)'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # Conservative parsing
+        # TODO: change the order 
+        match = re.findall(r"(\([A-E]\))", ans)
+        if len(set(match)) == 1:
+            return match[0]
+        else:
+            # Get the first 5 caracteres after the word "Answer:" or "Resposta:"
+            match = re.findall(r"(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
+            if len(set(match)) == 1:
+                # Return only the letter
+                return match[-1].removeprefix("(").removesuffix(")")
+            else:
+                return None
 
-        pattern = r'answer is ([A-E])'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+
+        # pattern = r'Resposta: ([A-E])'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
         
-        pattern = r'answer is \(([A-E])\)'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'Resposta: \(([A-E])\)'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
         
-        pattern = r'Answer: ([ABCDE])'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'Answer: ([A-E])'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
         
-        pattern = r'A resposta correta é (\w):'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'Answer: \(([A-E])\)'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
+
+        # pattern = r'answer is ([A-E])'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
         
-        pattern = r'[Tt]he answer is ([A-E])'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'answer is \(([A-E])\)'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
         
-        pattern = r'answer is \(([A-E])\)'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'Answer: ([ABCDE])'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
+        
+        # pattern = r'A resposta correta é (\w):'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
+        
+        # pattern = r'[Tt]he answer is ([A-E])'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
+        
+        # pattern = r'answer is \(([A-E])\)'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
             
-        pattern = r'A resposta correta é (\w) '
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'A resposta correta é (\w) '
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
 
-        pattern = r'A resposta certa é (\w):'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'A resposta certa é (\w):'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
         
-        pattern = r'option ([A-E])'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'option ([A-E])'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
 
-        if re.match(r"^(A|B|C|D|E)$", ans):
-            return ans
+        # if re.match(r"^(A|B|C|D|E)$", ans):
+        #     return ans
         
-        pattern = r'\(([A-E])\)'
-        match = re.search(pattern, ans)
-        if match:
-            return match.group(1)
+        # pattern = r'\(([A-E])\)'
+        # match = re.search(pattern, ans)
+        # if match:
+        #     return match.group(1)
     
-        ans = re.search('[ABCDE]\.',ans).group().rstrip('.') if re.search('[ABCDE]\.',ans) else None
+        # ans = re.search('[ABCDE]\.',ans).group().rstrip('.') if re.search('[ABCDE]\.',ans) else None
         
-        if ans is None:
-            pos_inst = answer.split('[/INST]')[-1]
-            ans = pos_inst.strip()
-            ans = re.search('[ABCDE]\)',ans).group().rstrip(')') if re.search('[ABCDE]\)',ans) else None
+        # if ans is None:
+        #     pos_inst = answer.split('[/INST]')[-1]
+        #     ans = pos_inst.strip()
+        #     ans = re.search('[ABCDE]\)',ans).group().rstrip(')') if re.search('[ABCDE]\)',ans) else None
         
-        if ans is None and question is not None:
-            for option in ['A', 'B', 'C', 'D', 'E']:
-                if str(question["options"][option]) in pos_inst:
-                    return option
+        # if ans is None and question is not None:
+        #     for option in ['A', 'B', 'C', 'D', 'E']:
+        #         if str(question["options"][option]) in pos_inst:
+        #             return option
+
+
+
         
         return ans
 
@@ -225,10 +270,18 @@ class LLAMA2(Model):
         options_letters = sorted(list(options.keys()))
         system_prompt = self.get_system_prompt(system_prompt_type, language, options_letters)
         question_word = "Questão" if language == "pt-br" else "Question"
-        prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n\n"""
-        for option in options_letters:
-            prompt += f"({option}) {options[option]}\n"
-        prompt += f"[/INST]"""
+        if system_prompt_type != "few-shot":
+            prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n\n"""
+            for option in options_letters:
+                prompt += f"({option}) {options[option]}\n"
+            prompt += f"[/INST]"""
+        else:
+            # Slighly different prompt for few-shot
+            option_word = "Options" if language == "en" else "Alternativas"
+            prompt = f"""<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{question_word}: {question["body"]}\n{option_word}:\n"""
+            for option in options_letters:
+                prompt += f"({option}) {options[option]}\n"
+            prompt += f"[/INST]"""
 
         return prompt
     
