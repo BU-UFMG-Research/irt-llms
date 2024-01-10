@@ -103,19 +103,21 @@ Responda a questão a seguir com o formato definido anteriormente.
         ans = pos_inst.strip()
 
         # Conservative parsing
-        # TODO: change the order 
-        match = re.findall(r"(\([A-E]\))", ans)
+        # Get the option after "Answer:" or "Resposta:"
+        match = re.findall(r"(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
         if len(set(match)) == 1:
-            return match[0]
+            # Return only the letter
+            return match[0][-1].removeprefix("(").removesuffix(")")
         else:
-            # Get the first 5 caracteres after the word "Answer:" or "Resposta:"
-            match = re.findall(r"(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
+            match = re.findall(r"(\([A-E]\))", ans)
             if len(set(match)) == 1:
-                # Return only the letter
-                return match[-1].removeprefix("(").removesuffix(")")
+                return match[0].removeprefix("(").removesuffix(")")
             else:
-                return None
-
+                match = re.findall(r"([A-E]\))", ans) # Case were there is only one parenthesis (e.g. "A)")
+                if len(set(match)) == 1:
+                    return match[0].removesuffix(")")
+                else:
+                    return None
 
         # pattern = r'Resposta: ([A-E])'
         # match = re.search(pattern, ans)
@@ -201,11 +203,8 @@ Responda a questão a seguir com o formato definido anteriormente.
         #     for option in ['A', 'B', 'C', 'D', 'E']:
         #         if str(question["options"][option]) in pos_inst:
         #             return option
-
-
-
-        
-        return ans
+                
+        # return ans
 
 
 # Define LLAMA2 model class
@@ -318,10 +317,18 @@ class Mistral(Model):
         options_letters = sorted(list(options.keys()))
         system_prompt = self.get_system_prompt(system_prompt_type, language, options_letters)
         question_word = "Questão" if language == "pt-br" else "Question"
-        prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n\n"""
-        for option in options_letters:
-            prompt += f"({option}) {options[option]}\n"
-        prompt += f"[/INST]"""
+        if system_prompt_type != "few-shot":
+            prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n\n"""
+            for option in options_letters:
+                prompt += f"({option}) {options[option]}\n"
+            prompt += f"[/INST]"""
+        else:
+            # Slighly different prompt for few-shot
+            option_word = "Options" if language == "en" else "Alternativas"
+            prompt = f"""<s>[INST] {system_prompt}\n\n{question_word}: {question["body"]}\n{option_word}:\n"""
+            for option in options_letters:
+                prompt += f"({option}) {options[option]}\n"
+            prompt += f"[/INST]"""
 
         return prompt
     

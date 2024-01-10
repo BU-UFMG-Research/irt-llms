@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 44 tasks
-#$ -t 1-1
+#$ -t 1-8
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -26,15 +26,16 @@ declare -a params
 idx=0
 IFS=' ' # space is set as delimiter
 
-for model in "llama2" "mistral"
+for model in "mistral" #"llama2" 
 do
     for model_size in "7b"
     do
         for temperature in "0.6"
         do
-            for system_prompt_type in "simple" "cot"
+            for system_prompt_type in "few-shot" #"simple" "cot"
             do
-                for enem_exam in "ENEM_2023_CH_CO_PROVA_0" "ENEM_2023_CN_CO_PROVA_0" "ENEM_2023_LC_CO_PROVA_0" "ENEM_2023_MT_CO_PROVA_0" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062" "ENEM_2017_CH_CO_PROVA_408" "ENEM_2017_CN_CO_PROVA_407" "ENEM_2017_LC_CO_PROVA_409" "ENEM_2017_MT_CO_PROVA_410" "ENEM_2018_CH_CO_PROVA_464" "ENEM_2018_CN_CO_PROVA_463" "ENEM_2018_LC_CO_PROVA_465" "ENEM_2018_MT_CO_PROVA_466"
+                #for enem_exam in "ENEM_2023_CH_CO_PROVA_0" "ENEM_2023_CN_CO_PROVA_0" "ENEM_2023_LC_CO_PROVA_0" "ENEM_2023_MT_CO_PROVA_0" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062" "ENEM_2017_CH_CO_PROVA_408" "ENEM_2017_CN_CO_PROVA_407" "ENEM_2017_LC_CO_PROVA_409" "ENEM_2017_MT_CO_PROVA_410" "ENEM_2018_CH_CO_PROVA_464" "ENEM_2018_CN_CO_PROVA_463" "ENEM_2018_LC_CO_PROVA_465" "ENEM_2018_MT_CO_PROVA_466"
+                for enem_exam in "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062"
                 do
                     for exam_type in "default"
                     do
@@ -44,7 +45,7 @@ do
                             do
                                 for number_options in "5"
                                 do
-                                    for seed in "-1"
+                                    for seed in "2724839799" #"-1"
                                     do
                                         params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$number_options$IFS$seed
                                         ((idx++))

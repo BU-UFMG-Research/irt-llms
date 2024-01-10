@@ -76,6 +76,9 @@ files.sort()
 new_df = None
 count = 0
 total = 0
+errors_exam = {}
+errors_language = {}
+errors_model = {}
 for file in files:
     print("Processing file ", file)
     print()
@@ -96,9 +99,6 @@ for file in files:
     seed = df.iloc[0, :].SEED
     number_options = df.iloc[0, :].NUMBER_OPTIONS
 
-    if df.iloc[0, :].SYSTEM_PROMPT_TYPE != "cot":
-        continue
-
     enem = ENEM(enem_exam, exam_type=enem_exam_type, question_order=question_order, seed=seed, language=language, number_options=number_options)
 
     new_TX_RESPOSTAS = ""
@@ -111,27 +111,54 @@ for file in files:
         parsed_answer = row.PARSED_ANSWER
         previous_correct_answer = row.CORRECT_ANSWER
         question = enem.get_question(idx)
-        new_correct_answer = parse_answer(full_answer, question, df.iloc[0, :].SYSTEM_PROMPT_TYPE, language)
+        #new_correct_answer = parse_answer(full_answer, question, df.iloc[0, :].SYSTEM_PROMPT_TYPE, language)
         
+        # LLAMA2
+        # Total: 370
+        # Count: 18
+        # Percentage: 0.04864864864864865
+
         total += 1
-        if new_correct_answer != previous_correct_answer:
+        if parsed_answer is None:
+            count += 1
+            try:
+                errors_exam[enem_exam] += 1
+            except KeyError:
+                errors_exam[enem_exam] = 1
+
+            try:
+                errors_language[language] += 1
+            except KeyError:
+                errors_language[language] = 1
+
+            try:
+                errors_model[df.iloc[0, :].MODEL_NAME] += 1
+            except KeyError:
+                errors_model[df.iloc[0, :].MODEL_NAME] = 1
+            print("Full answer:", full_answer)
+            print("Parsed answer:", parsed_answer)
+            a = input()
+            print("\n-------------------------------------\n")
+        
+        #if new_correct_answer != previous_correct_answer:
             # print("\n\n\nQuestion ", idx)
             # print("Previous correct answer:", previous_correct_answer)
             # print("New correct answer:", new_correct_answer)
             # print("\nFull answer:", full_answer)
 
-            if new_correct_answer is None:
+            #if new_correct_answer is None:
                 #new_correct_answer = input("Enter the new correct answer: ")
                 #print(new_correct_answer)
-                count += 1
+        
+                #count += 1
 
         # new_TX_RESPOSTAS += new_correct_answer
         # new_RESPONSE_PATTERN += "1" if new_correct_answer == parsed_answer else "0"
         # new_CTT_SCORE += 1 if new_correct_answer == parsed_answer else 0
 
-    df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
-    df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
-    df["CTT_SCORE"] = new_CTT_SCORE
+    # df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
+    # df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
+    # df["CTT_SCORE"] = new_CTT_SCORE
 
     # df.to_parquet(new_file)
 
@@ -141,6 +168,12 @@ for file in files:
 print("Total:", total)
 print("Count:", count)
 print("Percentage:", count/total)
+print()
+print(errors_exam)
+print()
+print(errors_language)
+print()
+print(errors_model)
 
 # Old aggregate_results.py
 # files = glob.glob("enem-experiments-results/*")
