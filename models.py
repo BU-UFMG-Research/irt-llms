@@ -69,35 +69,7 @@ Responda a questão a seguir com o formato definido anteriormente.
 
     def parse_answer(self, answer, question):
         """
-        Parser is not correct. Example:
-
-         Aponte as alternativas que fazem sentido: (A), (B), (C), (D).
-
-        Escolha a alternativa CORRETA: (B) 74,51.
-
-        Justifique: O gráfico mostra que a esperança de vida ao nascer em 2013 foi exatamente a média das registradas nos anos de 2012 e de 2014. Então, a esperança de vida ao nascer em 2014 seria a média das registradas nos anos de 2013 e de 2015. A média de 74,23 e 74,51 é 74,32. Então, a esperança de vida ao nascer em 2014 seria 74,32.
-
-        Resposta: (B) 74,51.
-
-        The answer should be B, but the parser returns A.
-
-        def get_formatted_answer(question, answer):
-            gold = ["A.", "B.", "C.", "D.", "E."][question["gold"]]
-            pred = answer
-
-            # regex processing. Useful for zero-shot
-            match_1 = re.findall(r"(?:|[Ll]etra |[Aa]lternativa )([ABCDE])\.", pred)
-            match_2 = re.findall(r"(?:|[Ll]etra |[Aa]lternativa )([ABCDE])", pred)
-            if len(match_1) > 0:
-                pred = match_1[-1] + "."
-            elif len(match_2) > 0:
-                pred = match_2[-1] + "."
-            else:
-                print(f"Regex failed at processing {pred=}")
-                print(f"{gold=}, {pred=}")
-
-            return pred, gold
-
+        Parse answer from model output (conservative parsing, considering that there is a [/INST] tag at the end of the answer])
         """
         pos_inst = answer.split('[/INST]')[-1]
         ans = pos_inst.strip()
@@ -118,94 +90,6 @@ Responda a questão a seguir com o formato definido anteriormente.
                     return match[0].removesuffix(")")
                 else:
                     return None
-
-        # pattern = r'Resposta: ([A-E])'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'Resposta: \(([A-E])\)'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'Answer: ([A-E])'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'Answer: \(([A-E])\)'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-
-        # pattern = r'answer is ([A-E])'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'answer is \(([A-E])\)'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'Answer: ([ABCDE])'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'A resposta correta é (\w):'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'[Tt]he answer is ([A-E])'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'answer is \(([A-E])\)'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-            
-        # pattern = r'A resposta correta é (\w) '
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-
-        # pattern = r'A resposta certa é (\w):'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-        
-        # pattern = r'option ([A-E])'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-
-        # if re.match(r"^(A|B|C|D|E)$", ans):
-        #     return ans
-        
-        # pattern = r'\(([A-E])\)'
-        # match = re.search(pattern, ans)
-        # if match:
-        #     return match.group(1)
-    
-        # ans = re.search('[ABCDE]\.',ans).group().rstrip('.') if re.search('[ABCDE]\.',ans) else None
-        
-        # if ans is None:
-        #     pos_inst = answer.split('[/INST]')[-1]
-        #     ans = pos_inst.strip()
-        #     ans = re.search('[ABCDE]\)',ans).group().rstrip(')') if re.search('[ABCDE]\)',ans) else None
-        
-        # if ans is None and question is not None:
-        #     for option in ['A', 'B', 'C', 'D', 'E']:
-        #         if str(question["options"][option]) in pos_inst:
-        #             return option
-                
-        # return ans
-
 
 # Define LLAMA2 model class
 class LLAMA2(Model):
