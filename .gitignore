@@ -3,6 +3,9 @@ venv/
 enem-experiments-results/
 enem-experiments-results-new-parsing/
 cache/
+enem-microdata/
+MICRODADOS_ENEM_2022.csv
+QUEST_HAB_ESTUDO.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
