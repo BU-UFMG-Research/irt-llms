@@ -1,6 +1,7 @@
 venv/
 .DS_Store
 enem-experiments-results/
+enem-experiments-results-new-parsing/
 cache/
 
 # Byte-compiled / optimized / DLL files

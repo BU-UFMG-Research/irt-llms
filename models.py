@@ -37,9 +37,9 @@ Options:
 (C) 7
 (D) 11
 (E) 9
-The answer format should be as follows:
+Answer Format:
 Answer: (D) 11
-Answer the following question with the format defined above.
+Instructions: Please answer the question below in accordance with the provided format.
 """
         elif language == "pt-br":
             if system_prompt_type == "simple":
@@ -60,9 +60,9 @@ Alternativas:
 (C) 7
 (D) 11
 (E) 9
-O formato da resposta deve ser o seguinte:
+Formato da Resposta:
 Resposta: (D) 11
-Responda a questão a seguir com o formato definido anteriormente.
+Instruções: Responda a questão a seguir com o formato definido anteriormente.
 """
         return system_prompt
 

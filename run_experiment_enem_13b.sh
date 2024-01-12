@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 22 tasks
-#$ -t 1-4
+#$ -t 1-8
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -59,25 +59,25 @@ IFS=' ' # space is set as delimiter
 #     done
 # done
 
-for model in "llama2"
+for model in "llama2" 
 do
     for model_size in "13b"
     do
         for temperature in "0.6"
         do
-            for system_prompt_type in "cot"
+            for system_prompt_type in "few-shot"
             do
-                for enem_exam in "ENEM_2017_CH_CO_PROVA_408"
+                for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062"
                 do
                     for exam_type in "default"
                     do
                         for question_order in "original"
                         do
-                            for language in "pt-br"
+                            for language in "en" "pt-br"
                             do
                                 for number_options in "5"
                                 do
-                                    for seed in "224453832" "1513448043" "745130168" "730262723"
+                                    for seed in "2724839799"
                                     do
                                         params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$number_options$IFS$seed
                                         ((idx++))
@@ -91,12 +91,6 @@ do
         done
     done
 done
-
-# {'model': 'llama2', 'model_size': '13b', 'temperature': '0.6', 'system_prompt_type': 'cot', 'enem_exam': 'ENEM_2017_CH_CO_PROVA_408', 'exam_type': 'default', 'question_order': 'original', 'language': 'pt-br', 'number_option': '5', 'seed': '224453832'}
-# {'model': 'llama2', 'model_size': '13b', 'temperature': '0.6', 'system_prompt_type': 'cot', 'enem_exam': 'ENEM_2017_CH_CO_PROVA_408', 'exam_type': 'default', 'question_order': 'original', 'language': 'pt-br', 'number_option': '5', 'seed': '1513448043'}
-# {'model': 'llama2', 'model_size': '13b', 'temperature': '0.6', 'system_prompt_type': 'cot', 'enem_exam': 'ENEM_2017_CH_CO_PROVA_408', 'exam_type': 'default', 'question_order': 'original', 'language': 'pt-br', 'number_option': '5', 'seed': '745130168'}
-# {'model': 'llama2', 'model_size': '13b', 'temperature': '0.6', 'system_prompt_type': 'cot', 'enem_exam': 'ENEM_2017_CH_CO_PROVA_408', 'exam_type': 'default', 'question_order': 'original', 'language': 'pt-br', 'number_option': '5', 'seed': '730262723'}
-
 
 index=$(($SGE_TASK_ID-1))
 read -ra taskinput <<< "${params[$index]}" # str is read into an array as tokens separated by IFS
