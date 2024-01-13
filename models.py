@@ -3,6 +3,7 @@ import re
 from transformers import LlamaForCausalLM , LlamaTokenizer, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, set_seed
 import torch
 import numpy as np
+from openai import OpenAI
 
 # Define abstract model class
 class Model(ABC):
@@ -28,8 +29,7 @@ class Model(ABC):
             elif system_prompt_type == "cot":
                 system_prompt = "Formulate a logical reasoning chain explanation that allows you to answer the multiple-choice question below. Only one alternative is correct.\nDesired format: point out the alternatives that make sense, choose the CORRECT alternative and justify it, and finish justifying why the other alternatives are incorrect. End the explanation with \"Answer: \" followed by the alternative."
             elif system_prompt_type == "few-shot":
-                system_prompt = """
-You will answer a multiple choice question with the following format:
+                system_prompt = """You will answer a multiple choice question with the following format:
 Question: Roger has 5 tennis balls. He buys 2 more cans of tennis balls. Each can has 3 tennis balls. How many tennis balls does he have now?
 Options:
 (A) 5
@@ -51,8 +51,7 @@ Instructions: Please answer the question below in accordance with the provided f
             elif system_prompt_type == "cot":
                 system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
             elif system_prompt_type == "few-shot":
-                system_prompt = """
-Você responderá uma questão de multipla escolha com o seguinte formato:
+                system_prompt = """Você responderá uma questão de multipla escolha com o seguinte formato:
 Questão: Roger tem 5 bolas de tênis. Ele compra mais 2 latas de bolas de tênis. Cada lata tem 3 bolas de tênis. Quantas bolas de tênis ele tem agora?
 Alternativas:
 (A) 5
@@ -238,4 +237,55 @@ class RandomModel(Model):
         Create prompt
         """
         return None
+    
+class GPT(Model):
+    """
+    GPT model class
+    """
+
+    def __init__(self, model, temperature=0.6, random_seed=0):
+        super().__init__()
+        self.model = model
+        self.client = OpenAI()
+        self.temperature = temperature
+        self.seed = random_seed
+
+    def get_answer_from_question(self, question, system_prompt_type, language):
+        """
+        Get answer from question
+        """
+        system_prompt, prompt = self.create_prompt(question, system_prompt_type, language)
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            seed=self.seed,
+            temperature=self.temperature,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+        )
+
+        answer = response.choices[0].message.content
+        #fingerpring = response.system_fingerprint  TODO: save the fingerprint to check reproducibility
+        return self.parse_answer(answer, question), answer
+    
+    def create_prompt(self, question, system_prompt_type, language):
+        """
+        Create prompt
+        """
+        # For the multi-turn prompt, we need to add <s> and </s> tokens and concatenate the previous turns
+        options = question["options"]
+        options_letters = sorted(list(options.keys()))
+        system_prompt = self.get_system_prompt(system_prompt_type, language, options_letters)
+        question_word = "Questão" if language == "pt-br" else "Question"
+        option_word = "Options" if language == "en" else "Alternativas"
+
+        prompt = f"""{question_word}: {question["body"]}\n{option_word}:\n"""
+        for option in options_letters:
+            prompt += f"({option}) {options[option]}\n"
+
+        return system_prompt, prompt
+
+
     
