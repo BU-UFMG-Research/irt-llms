@@ -6,6 +6,7 @@ cache/
 enem-microdata/
 MICRODADOS_ENEM_2022.csv
 QUEST_HAB_ESTUDO.csv
+experiments-with-irt.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
