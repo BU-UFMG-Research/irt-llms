@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 class ENEM():
-    def __init__(self, enem_exam, exam_type, question_order="random", seed=42, language="pt-br", number_options=5, number_options_method="random"):
+    def __init__(self, enem_exam, exam_type, question_order="original", seed=42, language="pt-br", number_options=5, number_options_method="random"):
         self.df_enem = pd.read_csv(f"data/parsed-enem-exams/{language}/{exam_type}/{enem_exam}.csv")
 
         # Shuffle questions if necessary

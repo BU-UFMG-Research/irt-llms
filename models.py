@@ -250,11 +250,11 @@ class GPT(Model):
         self.temperature = temperature
         self.seed = random_seed
 
-    def get_answer_from_question(self, question, system_prompt_type, language):
+    def get_answer_from_question(self, question, system_prompt_type, language, options_letters):
         """
         Get answer from question
         """
-        system_prompt, prompt = self.create_prompt(question, system_prompt_type, language)
+        system_prompt, prompt = self.create_prompt(question, system_prompt_type, language, options_letters)
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -270,13 +270,12 @@ class GPT(Model):
         #fingerpring = response.system_fingerprint  TODO: save the fingerprint to check reproducibility
         return self.parse_answer(answer, question), answer
     
-    def create_prompt(self, question, system_prompt_type, language):
+    def create_prompt(self, question, system_prompt_type, language, options_letters):
         """
         Create prompt
         """
         # For the multi-turn prompt, we need to add <s> and </s> tokens and concatenate the previous turns
         options = question["options"]
-        options_letters = sorted(list(options.keys()))
         system_prompt = self.get_system_prompt(system_prompt_type, language, options_letters)
         question_word = "Questão" if language == "pt-br" else "Question"
         option_word = "Options" if language == "en" else "Alternativas"

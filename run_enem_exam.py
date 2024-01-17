@@ -27,7 +27,7 @@ GenerationConfig {
 # Create an argparser
 parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 # LLMs args
-parser.add_argument('--model', type=str, choices=["llama2", "mistral", "random", "gpt-3.5-turbo"], required=True, help='Model to run')
+parser.add_argument('--model', type=str, choices=["llama2", "mistral", "random", "gpt-3.5-turbo-1106"], required=True, help='Model to run')
 parser.add_argument('--model_size', type=str, choices=["7b", "13b"], help='Model size')
 parser.add_argument('--temperature', type=float, help='Temperature')
 parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot", "few-shot", "few-shot-no-inst"], help='System prompt type')
@@ -86,7 +86,7 @@ for seed in seeds:
             raise Exception("Model size not implemented for Mistral")
     elif args.model == "random":
         model = RandomModel()
-    elif args.model == "gpt-3.5-turbo":
+    elif args.model == "gpt-3.5-turbo-1106":
         model = GPT(args.model, temperature=args.temperature, random_seed=args.seed)
     else:
         raise Exception("Model not implemented")
