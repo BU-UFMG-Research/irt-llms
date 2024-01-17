@@ -5,14 +5,17 @@ library(mirtCAT)
 
 print("Running...")
 
+
 #response_pattern_filepath = "../test_responses_humans/2021/responses/test_responses_humans_CN_2021.csv"
 #file_itens_prova = "../microdados/microdados_enem_2021/DADOS/ITENS_PROVA_2021.csv"
 #theta_file = "../test_responses_humans/2021/thetas_humans_CN_2021.csv"
 #sample_size = 40
 
-response_pattern_filepath = "../test_responses_llms/ZIPS/ALL/GABRIEL/enem-experiments-results-processed.csv"
-file_itens_prova = "../microdados/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv"
-theta_file = "../test_responses_llms/ZIPS/ALL/GABRIEL/thetas-enem-experiments-results-processed.csv"
+#response_pattern_filepath = "../test_responses_llms/ZIPS/ALL/GABRIEL/enem-experiments-results-processed.csv"
+#file_itens_prova = "../microdados/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv"
+#theta_file = "../test_responses_llms/ZIPS/ALL/GABRIEL/thetas-enem-experiments-results-processed.csv"
+
+theta_file <- sub("\\.csv$", "_with_irt.csv", response_pattern_filepath)
 
 sample_size=1
 
