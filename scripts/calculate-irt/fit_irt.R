@@ -5,6 +5,8 @@ library(mirtCAT)
 
 print("Running...")
 
+#response_pattern_filepath = "C:/Users/pedro/Downloads/TRI/test_responses_llms/EXP/LC/2022/mistral/simple-zero-shot/aggregated/majority_sample.csv"
+#file_itens_prova = "C:/Users/pedro/Downloads/TRI/microdados/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv"
 
 #response_pattern_filepath = "../test_responses_humans/2021/responses/test_responses_humans_CN_2021.csv"
 #file_itens_prova = "../microdados/microdados_enem_2021/DADOS/ITENS_PROVA_2021.csv"
@@ -19,7 +21,9 @@ theta_file <- sub("\\.csv$", "_with_irt.csv", response_pattern_filepath)
 
 sample_size=1
 
-item_params <- read.csv(file_itens_prova, header = TRUE, sep=';')  
+item_params <- read.csv(file_itens_prova, header = TRUE, sep=';')
+# Skip English itens.
+item_params <- subset(item_params, TP_LINGUA != '0' | is.na(TP_LINGUA))
 item_params <- item_params[order(item_params$CO_POSICAO, decreasing = FALSE), ]
 
 print("Loaded item params")
@@ -83,6 +87,7 @@ for (i in 1:nrow(response_patterns)) {
   CODIGO_PROVA =response_patterns$CO_PROVA[i]
   
   item_params_prova <- subset(item_params, CO_PROVA == CODIGO_PROVA)
+
 
   
   if (is.null(model_list[[toString(CODIGO_PROVA)]]))
