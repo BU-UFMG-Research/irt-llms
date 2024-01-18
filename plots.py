@@ -1,12 +1,47 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import re
+
+from exam import ENEM
 df = pd.read_csv("experiments-with-irt.csv", index_col=0)
 df.drop(columns=["Unnamed: 0"], inplace=True)
 
 # concat MODEL_NAME and MODEL_SIZE in one column
 df["FULL_MODEL"] = df["MODEL_NAME"].astype(str) + " " + df["MODEL_SIZE"].astype(str)
+
+# Plot heatmap of models x questions sorted by difficulty
+df_items = pd.read_csv("data/raw-enem-exams/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv", sep=";", encoding="latin-1")
+
+fig, axes = plt.subplots(2, 2, figsize=(10, 5))
+# Set fontsize
+plt.rcParams.update({"font.size": 8})
+fig.suptitle("Heatmap per ENEM Exam")
+for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
+    sample_df = df[df.ENEM_EXAM == enem_exam]
+    matrix_response_pattern = []
+    idx_name = []
+    for row in sample_df.itertuples():
+        exam = df_items[df_items.CO_PROVA == row.CO_PROVA].sort_values(by="CO_POSICAO").reset_index(drop=True)
+        exam["IDX_POSICAO"] = exam.index
+        exam.sort_values(by="NU_PARAM_B", inplace=True)
+        print(exam[["NU_PARAM_B", "CO_POSICAO", "IDX_POSICAO"]])
+        exam.dropna(subset=["NU_PARAM_B"], inplace=True)
+        response_pattern = np.array(list(row.RESPONSE_PATTERN)).astype(int)
+        response_pattern = response_pattern[exam.IDX_POSICAO.values]
+        matrix_response_pattern.append(response_pattern)
+        idx_name.append(row.FULL_MODEL + " " + row.LANGUAGE)
+    
+    axes[i // 2, i % 2].imshow(matrix_response_pattern, cmap="binary")
+    axes[i // 2, i % 2].set_xticks(np.arange(len(exam.IDX_POSICAO.values)), labels=exam.IDX_POSICAO.values)
+    axes[i // 2, i % 2].set_yticks(np.arange(len(idx_name)), labels=idx_name, fontsize=6)
+    axes[i // 2, i % 2].set_xticklabels([])
+    axes[i // 2, i % 2].set_title(enem_exam)
+
+plt.tight_layout()
+plt.savefig("plots/response-pattern-heatmap.png", dpi=800)
+plt.close()
 
 df["ENEM_EXAM"].replace(
     {
@@ -31,7 +66,7 @@ sns.catplot(
 )
 
 plt.tight_layout()
-plt.savefig("irt-scores-language.png")
+plt.savefig("plots/irt-scores-language.png", dpi=800)
 plt.close()
 
 # plot IRT_SCORES per model and exam type and language
@@ -53,8 +88,7 @@ plt.tight_layout()
 # for ax in g.axes.flat:
 #     ax.set_title(re.findall(r"(CH | CN | LC | MT).*", ax.get_title())[-1])
 g.set_xticklabels(rotation=10)
-plt.savefig("irt-scores-language-enem.png")
+plt.savefig("plots/irt-scores-language-enem.png", dpi=800)
 plt.close()
-
 
 
