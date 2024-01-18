@@ -15,7 +15,7 @@ print("Running...")
 #file_itens_prova = "../microdados/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv"
 #theta_file = "../test_responses_llms/ZIPS/ALL/GABRIEL/thetas-enem-experiments-results-processed.csv"
 
-theta_file <- sub("\\.csv$", "_with_irt.csv", filepath)
+theta_file <- sub("\\.csv$", "_with_irt.csv", response_pattern_filepath)
 
 sample_size=1
 
