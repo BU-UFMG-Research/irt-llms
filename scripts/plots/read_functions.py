@@ -140,7 +140,7 @@ def read_llm_data(filepath):
         dic_test_responses[llm] = defaultdict(dict)
         dic_random_scores[llm] = defaultdict(dict)
     
-        for exam in ["CH", "MT", "CN"]:
+        for exam in ["CH", "MT", "CN", "LC"]:
             for year in [2020, 2021, 2022]:
             
                 for prompt in ['simple-zero-shot']:
