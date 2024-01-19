@@ -14,34 +14,39 @@ files.sort()
 
 new_df = None
 for file in files:
-    # if "LC" in file:
-    #     # Different process for LC (we have to create two versions of the same file)
-    #     df = pd.read_parquet(file)
-    #     # v1: discard first 5 questions (spanish as foreign language)
-    #     #"CTT_SCORE", "TX_RESPOSTAS", "TX_GABARITO", "RESPONSE_PATTERN":
-    #     df_v1 = deepcopy(df)
-    #     df_v1.TX_RESPOSTAS = df_v1.TX_RESPOSTAS.apply(lambda x: x[5:])
-    #     df_v1.TX_GABARITO = df_v1.TX_GABARITO.apply(lambda x: x[5:])
-    #     df_v1.RESPONSE_PATTERN = df_v1.RESPONSE_PATTERN.apply(lambda x: x[5:])
-    #     #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
-    #     df_v1.CTT_SCORE = df_v1.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
-    #     df_v1.ENEM_EXAM = df_v1.ENEM_EXAM.apply(lambda x: x + "-spanish-fl")
-    #     df_v1 = df_v1.reset_index(drop=True)
+    if "LC" in file:
+        # Different process for LC (we have to create two versions of the same file)
+        df = pd.read_parquet(file)
+        # v1: discard first 5 questions (spanish as foreign language)
+        #"CTT_SCORE", "TX_RESPOSTAS", "TX_GABARITO", "RESPONSE_PATTERN":
+        df_v1 = deepcopy(df)
+        df_v1.TX_RESPOSTAS = df_v1.TX_RESPOSTAS.apply(lambda x: x[5:])
+        df_v1.TX_GABARITO = df_v1.TX_GABARITO.apply(lambda x: x[5:])
+        df_v1.RESPONSE_PATTERN = df_v1.RESPONSE_PATTERN.apply(lambda x: x[5:])
+        #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
+        df_v1.CTT_SCORE = df_v1.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
+        df_v1.ENEM_EXAM = df_v1.ENEM_EXAM.apply(lambda x: x + "-spanish-fl")
+        df_v1 = df_v1.reset_index(drop=True)
 
-    #     # v2: discard from 5th to 10th question (english as foreign language)
-    #     df_v2 = deepcopy(df)
-    #     df_v2.TX_RESPOSTAS = df_v2.TX_RESPOSTAS.apply(lambda x: x[:5] + x[10:])
-    #     df_v2.TX_GABARITO = df_v2.TX_GABARITO.apply(lambda x: x[:5] + x[10:])
-    #     df_v2.RESPONSE_PATTERN = df_v2.RESPONSE_PATTERN.apply(lambda x: x[:5] + x[10:])
-    #     #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
-    #     df_v2.CTT_SCORE = df_v2.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
-    #     df_v2.ENEM_EXAM = df_v2.ENEM_EXAM.apply(lambda x: x + "-english-fl")
-    #     df_v2 = df_v2.reset_index(drop=True)
+        if new_df is None:
+            new_df = df_v1
+        else:
+            new_df = pd.concat([new_df, df_v1])
 
-    #     if new_df is None:
-    #         new_df = pd.concat([df_v1, df_v2])
-    #     else:
-    #         new_df = pd.concat([new_df, df_v1, df_v2])
+        # # v2: discard from 5th to 10th question (english as foreign language)
+        # df_v2 = deepcopy(df)
+        # df_v2.TX_RESPOSTAS = df_v2.TX_RESPOSTAS.apply(lambda x: x[:5] + x[10:])
+        # df_v2.TX_GABARITO = df_v2.TX_GABARITO.apply(lambda x: x[:5] + x[10:])
+        # df_v2.RESPONSE_PATTERN = df_v2.RESPONSE_PATTERN.apply(lambda x: x[:5] + x[10:])
+        # #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
+        # df_v2.CTT_SCORE = df_v2.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
+        # df_v2.ENEM_EXAM = df_v2.ENEM_EXAM.apply(lambda x: x + "-english-fl")
+        # df_v2 = df_v2.reset_index(drop=True)
+
+        # if new_df is None:
+        #     new_df = pd.concat([df_v1, df_v2])
+        # else:
+        #     new_df = pd.concat([new_df, df_v1, df_v2])
 
     if new_df is None:
         new_df = pd.read_parquet(file)

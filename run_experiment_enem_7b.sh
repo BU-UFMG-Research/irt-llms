@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 44 tasks
-#$ -t 1-16
+#$ -t 1-24
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -32,16 +32,15 @@ do
     do
         for temperature in "0.6"
         do
-            for system_prompt_type in "few-shot" #"simple" "cot"
+            for system_prompt_type in "few-shot"
             do
-                #for enem_exam in "ENEM_2023_CH_CO_PROVA_0" "ENEM_2023_CN_CO_PROVA_0" "ENEM_2023_LC_CO_PROVA_0" "ENEM_2023_MT_CO_PROVA_0" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062" "ENEM_2017_CH_CO_PROVA_408" "ENEM_2017_CN_CO_PROVA_407" "ENEM_2017_LC_CO_PROVA_409" "ENEM_2017_MT_CO_PROVA_410" "ENEM_2018_CH_CO_PROVA_464" "ENEM_2018_CN_CO_PROVA_463" "ENEM_2018_LC_CO_PROVA_465" "ENEM_2018_MT_CO_PROVA_466"
-                for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062"
+                for enem_exam in "ENEM_2021_CH_CO_PROVA_886" "ENEM_2021_CN_CO_PROVA_916" "ENEM_2021_LC_CO_PROVA_896" "ENEM_2021_MT_CO_PROVA_906" "ENEM_2020_CH_CO_PROVA_574" "ENEM_2020_CN_CO_PROVA_604" "ENEM_2020_LC_CO_PROVA_584" "ENEM_2020_MT_CO_PROVA_594" "ENEM_2019_CH_CO_PROVA_520" "ENEM_2019_CN_CO_PROVA_519" "ENEM_2019_LC_CO_PROVA_521" "ENEM_2019_MT_CO_PROVA_522" #"ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062"
                 do
                     for exam_type in "default"
                     do
                         for question_order in "original"
                         do
-                            for language in "pt-br" "en"
+                            for language in "pt-br" #"en"
                             do
                                 for number_options in "5"
                                 do
