@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 44 tasks
-#$ -t 1-48
+#$ -t 1-24
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -40,7 +40,7 @@ do
                     do
                         for question_order in "original"
                         do
-                            for language in "pt-br" "en"
+                            for language in "pt-br" #"en"
                             do
                                 for number_options in "5"
                                 do
