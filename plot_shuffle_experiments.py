@@ -43,7 +43,7 @@ ENEM_MAPPING_NAME = {
 enem_exams = [
     "ENEM_2022_CH_CO_PROVA_1062",
     "ENEM_2022_CN_CO_PROVA_1092",
-    #"ENEM_2022_LC_CO_PROVA_1072",
+    "ENEM_2022_LC_CO_PROVA_1072",
     "ENEM_2022_MT_CO_PROVA_1082",
 ]
 
@@ -100,12 +100,14 @@ for enem_exam in enem_exams:
     plt.savefig(f"plots/frequency-correct-answer-{enem_exam}.png", dpi=800)
     plt.close()
 
-
     df["UNIFORMITY_MEASURE"] = df["PATTERN_CORRECT_ANSWER"].apply(lambda x: np.max(x) - np.min(x))
 
     df_items = pd.read_csv(f"data/raw-enem-exams/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv", sep=";", encoding="latin-1")
 
     df_items = df_items[df_items.CO_PROVA == CO_PROVA].sort_values(by="CO_POSICAO")
+    if enem_exam == "ENEM_2022_LC_CO_PROVA_1072":
+        # Remove questions that are not in Spanish as foreign language
+        df_items = df_items[df_items.TP_LINGUA != 0].sort_values(by="CO_POSICAO")
 
     uniformity_measure = df.UNIFORMITY_MEASURE.values
     item_difficulty = df_items.NU_PARAM_B.values
