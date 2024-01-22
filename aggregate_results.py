@@ -25,7 +25,6 @@ for file in files:
         df_v1.RESPONSE_PATTERN = df_v1.RESPONSE_PATTERN.apply(lambda x: x[5:])
         #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
         df_v1.CTT_SCORE = df_v1.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
-        df_v1.ENEM_EXAM = df_v1.ENEM_EXAM.apply(lambda x: x + "-spanish-fl")
         df_v1 = df_v1.reset_index(drop=True)
 
         if new_df is None:
@@ -47,12 +46,13 @@ for file in files:
         #     new_df = pd.concat([df_v1, df_v2])
         # else:
         #     new_df = pd.concat([new_df, df_v1, df_v2])
-
-    if new_df is None:
-        new_df = pd.read_parquet(file)
     else:
-        new_df = pd.concat([new_df, pd.read_parquet(file)])
+        if new_df is None:
+            new_df = pd.read_parquet(file)
+        else:
+            new_df = pd.concat([new_df, pd.read_parquet(file)])
 
+new_df["CO_PROVA"] = new_df.ENEM_EXAM.apply(lambda x: x.split("_")[-1])
 new_df = new_df.reset_index(drop=True)
 new_df.to_parquet("enem-experiments-results-processed.parquet")
 

@@ -250,12 +250,15 @@ class GPT(Model):
         self.temperature = temperature
         self.seed = random_seed
 
-    def get_answer_from_question(self, question, system_prompt_type, language, options_letters):
+    def get_answer_from_question(self, question, system_prompt_type, language, options_letters=None):
         """
         Get answer from question
         """
+        if options_letters is None:
+            options_letters = sorted(list(question["options"].keys()))
+        
         system_prompt, prompt = self.create_prompt(question, system_prompt_type, language, options_letters)
-
+        
         response = self.client.chat.completions.create(
             model=self.model,
             seed=self.seed,

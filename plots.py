@@ -11,6 +11,16 @@ df.drop(columns=["Unnamed: 0"], inplace=True)
 # concat MODEL_NAME and MODEL_SIZE in one column
 df["FULL_MODEL"] = df["MODEL_NAME"].astype(str) + " " + df["MODEL_SIZE"].astype(str)
 
+df["ENEM_EXAM"].replace(
+    {
+        "ENEM_2022_CH_CO_PROVA_1062": "2022 Humanities",
+        "ENEM_2022_CN_CO_PROVA_1092": "2022 Natural Sciences",
+        "ENEM_2022_LC_CO_PROVA_1072-spanish-fl": "2022 Languages and Codes (Spanish as Foreign Language)",
+        "ENEM_2022_MT_CO_PROVA_1082": "2022 Mathematics",
+    },
+    inplace=True,
+)
+
 # Plot heatmap of models x questions sorted by difficulty
 df_items = pd.read_csv("data/raw-enem-exams/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv", sep=";", encoding="latin-1")
 
@@ -44,16 +54,6 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
 plt.tight_layout()
 plt.savefig("plots/response-pattern-heatmap.png", dpi=800)
 plt.close()
-
-df["ENEM_EXAM"].replace(
-    {
-        "ENEM_2022_CH_CO_PROVA_1062": "2022 Humanities",
-        "ENEM_2022_CN_CO_PROVA_1092": "2022 Natural Sciences",
-        "ENEM_2022_LC_CO_PROVA_1072": "2022 Languages and Codes",
-        "ENEM_2022_MT_CO_PROVA_1082": "2022 Mathematics",
-    },
-    inplace=True,
-)
 
 sns.catplot(
     data=df,

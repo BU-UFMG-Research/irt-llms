@@ -2,24 +2,11 @@
 # https://rdrr.io/cran/mirtCAT/man/generate.mirt_object.html
 #install.packages("mirtCAT")
 library(mirtCAT)
+library(arrow)
 
-print("Running...")
-
-#response_pattern_filepath = "C:/Users/pedro/Downloads/TRI/test_responses_llms/EXP/LC/2022/mistral/simple-zero-shot/aggregated/majority_sample.csv"
-#file_itens_prova = "C:/Users/pedro/Downloads/TRI/microdados/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv"
-
-#response_pattern_filepath = "../test_responses_humans/2021/responses/test_responses_humans_CN_2021.csv"
-#file_itens_prova = "../microdados/microdados_enem_2021/DADOS/ITENS_PROVA_2021.csv"
-#theta_file = "../test_responses_humans/2021/thetas_humans_CN_2021.csv"
-#sample_size = 40
-
-#response_pattern_filepath = "../test_responses_llms/ZIPS/ALL/GABRIEL/enem-experiments-results-processed.csv"
-#file_itens_prova = "../microdados/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv"
-#theta_file = "../test_responses_llms/ZIPS/ALL/GABRIEL/thetas-enem-experiments-results-processed.csv"
-
-theta_file <- sub("\\.csv$", "_with_irt.csv", response_pattern_filepath)
-
-sample_size=1
+response_pattern_filepath = "../../enem-experiments-results-processed.parquet"
+file_itens_prova = "../../data/raw-enem-exams/microdados_enem_2022/DADOS/ITENS_PROVA_2022.csv"
+theta_file = "../../thetas-enem-experiments-results-processed.csv"
 
 item_params <- read.csv(file_itens_prova, header = TRUE, sep=';')
 # Skip English itens.
@@ -29,35 +16,30 @@ item_params <- item_params[order(item_params$CO_POSICAO, decreasing = FALSE), ]
 print("Loaded item params")
 dim(item_params)
 
-file_path <- "../fit_irt_params.csv"
-file_conn <- file(file_path, "w")
+item_params_mirt <- data.frame(matrix(ncol = 9, nrow = 0))
+colnames(item_params_mirt) <- c("CO_PROVA", "CO_POSICAO", "a1", "d", "g", "u", "NU_PARAM_A", "NU_PARAM_B", "NU_PARAM_C")
 
-cat("CO_PROVA CO_POSICAO a1 d g u NU_PARAM_A NU_PARAM_B NU_PARAM_C", file = file_conn, "\n")
 for (i in 1:nrow(item_params)) {
   row <- item_params[i, ]
   mirt_input <- traditional2mirt(c('a'=row$NU_PARAM_A, 'b'=row$NU_PARAM_B, 'g'=row$NU_PARAM_C, 'u'=1), cls='3PL')
-  
-  #print(mirt_input)
-  
-  cat(row$CO_PROVA, file = file_conn, "")
-  cat(row$CO_POSICAO, file = file_conn, "")
-  cat(mirt_input, file = file_conn, "")
-  cat(row$NU_PARAM_A, file = file_conn, "")
-  cat(row$NU_PARAM_B, file = file_conn,  "")
-  cat(row$NU_PARAM_C, file = file_conn, "\n")
-}
-close(file_conn)
 
-print("fit_irt_params.csv Written.")
-item_params <- read.csv("../fit_irt_params.csv", header = TRUE, sep=" ") 
+  item_params_mirt[i, ] <- c(row$CO_PROVA, row$CO_POSICAO, mirt_input, row$NU_PARAM_A, row$NU_PARAM_B, row$NU_PARAM_C)
+}
+
+item_params <- item_params_mirt
 
 #########################################################
 
 print("Loading response patterns...")
 
 
-response_patterns <-  read.csv(paste(response_pattern_filepath, sep=""),  colClasses=c("RESPONSE_PATTERN"="character"), header = TRUE, sep =',')  
-PROVA <- substr(regmatches(response_pattern_filepath, regexpr("_([[:alnum:]]{2})\\.csv", response_pattern_filepath)), 2, 3)
+response_patterns <- read_parquet(response_pattern_filepath)
+
+# Filter in response_patterns: ENEM_EXAM contains 2022 substring
+response_patterns <- subset(response_patterns, grepl("2022", ENEM_EXAM)) #TODO: remove it
+
+# PROVA is in ENEM_EXAM attribute from response_patterns
+PROVA <- response_patterns$CO_PROVA
 
 print("Colnames Response Patterns")
 colnames(response_patterns)
@@ -67,19 +49,8 @@ dim(response_patterns)
 
 
 ###########################################################
-file_path <- paste(theta_file, sep="")
-file_conn <- file(file_path, "w")
-cat("ENEM_IRT_SCORE,CTT_SCORE,IRT_SCORE,IRT_SCORE_SE,MIN_CORRECT_B,MAX_CORRECT_B,MEAN_CORRECT_B,MEAN_INCORRECT_B", file = file_conn, "\n")
-
 model_list <- list()
 for (i in 1:nrow(response_patterns)) {
-  
-  
-  # menor numero: mais amostras
-  if (i %% sample_size != 0) 
-  {
-    next
-  }
   
   enem_irt_score = response_patterns$NU_NOTA[i]
   str_response_pattern = response_patterns$RESPONSE_PATTERN[i]
@@ -87,8 +58,6 @@ for (i in 1:nrow(response_patterns)) {
   CODIGO_PROVA =response_patterns$CO_PROVA[i]
   
   item_params_prova <- subset(item_params, CO_PROVA == CODIGO_PROVA)
-
-
   
   if (is.null(model_list[[toString(CODIGO_PROVA)]]))
   {
@@ -106,7 +75,6 @@ for (i in 1:nrow(response_patterns)) {
   # Convert the characters to numeric values (0 or 1)
   response_pattern <- as.numeric(char_vector)
 
-
   min_correct_b = 1000
   max_correct_b = -1000
   
@@ -119,7 +87,7 @@ for (i in 1:nrow(response_patterns)) {
   for (r_idx in 1:length(response_pattern)) {
     r = response_pattern[r_idx]
     nu_param_b = item_params_prova$NU_PARAM_B[r_idx]
-    
+
     if(!is.na(nu_param_b)) {
     
       if (r == 1){
@@ -139,28 +107,27 @@ for (i in 1:nrow(response_patterns)) {
       }
     }
   }
-  
-  score_and_error = fscores(model_list[[toString(CODIGO_PROVA)]], method="EAP", response.pattern = response_pattern)
-  
 
-  cat(enem_irt_score, file = file_conn, ",")
-  cat(ctt_score, file = file_conn, ",")
-  cat(score_and_error[1], file = file_conn, ",")
-  cat(score_and_error[2], file = file_conn, ",")
-  cat(min_correct_b, file = file_conn, ",")
-  cat(max_correct_b, file = file_conn, ",")
-  cat(mean(correct_bs), file = file_conn, ",")
-  cat(mean(incorrect_bs), file = file_conn, "\n")
-  
-  
-  #print("FINISHED")
-  
-  
-  #print("----------")
-  
+  score_and_error = fscores(model_list[[toString(CODIGO_PROVA)]], method="EAP", response.pattern = response_pattern)  
+
+  # if enem_irt_score is NULL, then use the score_and_error[1] * 100 + 500
+  if (is.null(enem_irt_score)) {
+    enem_irt_score = score_and_error[1] * 100 + 500
+  }
+
+  # Add them to the response_patterns dataframe
+  response_patterns$ENEM_IRT_SCORE[i] <- enem_irt_score
+  response_patterns$CTT_SCORE[i] <- ctt_score
+  response_patterns$IRT_SCORE[i] <- score_and_error[1]
+  response_patterns$IRT_SCORE_SE[i] <- score_and_error[2]
+  response_patterns$MIN_CORRECT_B[i] <- min_correct_b
+  response_patterns$MAX_CORRECT_B[i] <- max_correct_b
+  response_patterns$MEAN_CORRECT_B[i] <- mean(correct_bs)
+  response_patterns$MEAN_INCORRECT_B[i] <- mean(incorrect_bs)  
 }
 
-close(file_conn)
+# Save response_patterns with IRT scores
+write_parquet(response_patterns, "../../enem-experiments-results-processed-with-irt.parquet")
 
 
 

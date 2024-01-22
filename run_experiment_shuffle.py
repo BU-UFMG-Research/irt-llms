@@ -5,9 +5,6 @@ import os
 from matplotlib import pyplot as plt
 
 import numpy as np
-os.environ['HF_HOME'] = "cache/"
-os.environ['TRANSFORMERS_CACHE'] = "cache/"
-
 import argparse
 import time
 import pandas as pd
