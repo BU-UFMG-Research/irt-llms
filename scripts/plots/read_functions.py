@@ -132,7 +132,7 @@ def read_llm_data(filepath):
     dic_random_scores = defaultdict(dict)
 
     for llm in ['mistral', 'llama2']:
-        dic_scores[llm] = defaultdict(dict)
+        dic_scores[llm] = defaultdict(defaultdict)
         dic_itens[llm] = defaultdict(dict)
         dic_logs[llm] = defaultdict(dict)
         dic_average_theta_by_ctt_score[llm] = defaultdict(dict)
@@ -141,34 +141,35 @@ def read_llm_data(filepath):
         dic_random_scores[llm] = defaultdict(dict)
     
         for exam in ["CH", "MT", "CN", "LC"]:
-            for year in [2020, 2021, 2022]:
-            
-                for prompt in ['simple-zero-shot']:
-
-                    if not os.path.exists(f"{filepath}/{exam}/{year}/{llm}/{prompt}/aggregated/average_theta_by_score_random_sample.csv"):
-                        continue
-                    print('Loading...', exam, year, llm, prompt)
+            dic_scores[llm][exam] = defaultdict(dict)
+            for language in ["pt-br", "en"]:
+                for prompt in ['simple-zero-shot', 'paper-nunes-2023-zero-shot']:
+                    for year in [2020, 2021, 2022]:
+     
+                        if not os.path.exists(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/aggregated/average_theta_by_score_random_sample.csv"):
+                            continue
+                        print('Loading...', exam, year, llm, prompt)
                 
-                    scores_df = pd.read_csv(f"{filepath}/{exam}/{year}/{llm}/{prompt}/aggregated/samples_with_theta.csv")
-                    itens_df = pd.read_csv(f"{filepath}/{exam}/{year}/{llm}/{prompt}/aggregated/itens.csv")
-                    average_theta_by_score_random_df = pd.read_csv(f"{filepath}/{exam}/{year}/{llm}/{prompt}/aggregated/average_theta_by_score_random_sample.csv")
-                    average_theta_by_score_df = pd.read_csv(f"{filepath}/{exam}/{year}/{llm}/{prompt}/aggregated/average_theta_by_score_sample.csv")
-                    random_scores_df = pd.read_csv(f"{filepath}/{exam}/{year}/{llm}/{prompt}/aggregated/random_samples_with_theta.csv")
+                        scores_df = pd.read_csv(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/aggregated/samples_with_irt.csv")
+                        itens_df = pd.read_csv(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/aggregated/itens.csv")
+                        average_theta_by_score_random_df = pd.read_csv(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/aggregated/average_theta_by_score_random_sample.csv")
+                        average_theta_by_score_df = pd.read_csv(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/aggregated/average_theta_by_score_sample.csv")
+                        random_scores_df = pd.read_csv(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/aggregated/random_samples_with_irt.csv")
 
-                    test_responses_df = pd.read_csv(f"{filepath}/{exam}/{year}/{llm}/{prompt}/aggregated/test_responses.csv")
+                        test_responses_df = pd.read_csv(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/aggregated/test_responses.csv")
 
-                    log_dfs = read_dir(f"{filepath}/{exam}/{year}/{llm}/{prompt}/logs")
+                        log_dfs = read_dir(f"{filepath}/{exam}/{language}/{year}/{llm}/{prompt}/logs") 
         
-                    dic_scores[llm][exam][year] = scores_df
-                    dic_itens[llm][exam][year] = itens_df
-                    dic_logs[llm][exam][year] = log_dfs
+                        dic_scores[llm][exam][prompt][year] = scores_df
+                        dic_itens[llm][exam][year] = itens_df
+                        dic_logs[llm][exam][year] = log_dfs
 
-                    dic_average_theta_by_ctt_score[llm][exam][year] = average_theta_by_score_df
-                    dic_average_theta_by_ctt_random_score[llm][exam][year] = average_theta_by_score_random_df
+                        dic_average_theta_by_ctt_score[llm][exam][year] = average_theta_by_score_df
+                        dic_average_theta_by_ctt_random_score[llm][exam][year] = average_theta_by_score_random_df
         
-                    dic_test_responses[llm][exam][year] = test_responses_df
+                        dic_test_responses[llm][exam][year] = test_responses_df
         
-                    dic_random_scores[llm][exam][year] = random_scores_df
+                        dic_random_scores[llm][exam][year] = random_scores_df
                    
-    return dic_scores, dic_itens, dic_logs, dic_test_responses, dic_average_theta_by_ctt_score, dic_average_theta_by_ctt_random_score
+    return dic_scores, dic_random_scores, dic_itens, dic_logs, dic_test_responses, dic_average_theta_by_ctt_score, dic_average_theta_by_ctt_random_score
 
