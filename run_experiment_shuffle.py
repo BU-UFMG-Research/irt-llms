@@ -14,65 +14,10 @@ from exam import ENEM
 from transformers import set_seed
 import seaborn as sns
 
-permutations = list(itertools.permutations("ABCDE"))
-permutations = [list(x) for x in permutations]
-#enem_exam = "ENEM_2022_MT_CO_PROVA_1082"
-enem_exam = "ENEM_2022_CN_CO_PROVA_1092"
-df = pd.read_parquet(f"shuffle_experiment_{enem_exam}.parquet")
-df["FREQUENCY_CORRECT_ANSWER"] = df.apply(lambda x: x["MODEL_RESPONSE_PATTERN"].count(x["CORRECT_ANSWER"]), axis=1)
-df["FREQUENCY_CORRECT_ANSWER"] /= 120
-
-frequency_arrays = []
-for row in df.itertuples():
-    frequency_array = []
-    for pos in range(5):
-        correct_answer = row.CORRECT_ANSWER
-        positions = []
-        # Find all the positions where CORRECT_ANSWER is the pos element of the permutation
-        for i in range(len(permutations)):
-            if permutations[i][pos] == correct_answer:
-                positions.append(i)
-
-        # Get the substring in row.MODEL_RESPONSE_PATTERN in those positions
-        responses = []
-        for position in positions:
-            responses.append(row.MODEL_RESPONSE_PATTERN[position])
-
-        n_correct = responses.count(correct_answer)
-        
-        frequency_array.append(n_correct)
-
-    frequency_arrays.append(np.array(frequency_array))
-
-df["PATTERN_CORRECT_ANSWER"] = frequency_arrays
-
-x = df["PATTERN_CORRECT_ANSWER"].values
-# make it a 2D array
-x = np.vstack(x)
-
-# plot bars (each row of x is a subplot)
-fig, axes = plt.subplots(9, 5, figsize=(10, 5))
-idx = 0
-for i in range(9):
-    for j in range(5):
-        axes[i, j].bar(range(5), x[idx, :], color="black")
-        axes[i, j].set_xlim(-1, 5)
-        axes[i, j].set_ylim(0, 24)
-        axes[i, j].set_xticks([])
-        axes[i, j].set_yticks([])
-        #axes[i, j].set_frame_on(False)
-        idx += 1
-plt.suptitle(f"Frequency of correct answer in each position of the permutation: {enem_exam}")
-plt.tight_layout()
-plt.savefig(f"plots/frequency-correct-answer-{enem_exam}.png", dpi=800)
-plt.close()
-exit()
-
-
 model_name = "gpt-3.5-turbo-0613"
 temperature = 0.6
 system_prompt_type = "few-shot"
-enem_exam = "ENEM_2022_CN_CO_PROVA_1092" #"ENEM_2022_MT_CO_PROVA_1082"
+enem_exam = "ENEM_2022_LC_CO_PROVA_1072" #"ENEM_2022_CH_CO_PROVA_1062" #"ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_MT_CO_PROVA_1082"
 language = "pt-br"
 number_options = 5
 seed = 2724839799
@@ -91,7 +36,11 @@ start_time = time.time()
 model_response_patterns = []
 correct_answers = []
 
-for i in range(enem.get_enem_size()):
+# Skipping English as foreign language questions
+start = 5 if enem_exam == "ENEM_2022_LC_CO_PROVA_1072" else 0
+enem_size = enem.get_enem_size() - start
+
+for i in range(start, enem.get_enem_size()):
     # Saving model responses (letters and binary pattern), correct responses (for each question)
     model_response_pattern = ""
 
@@ -125,7 +74,7 @@ for i in range(enem.get_enem_size()):
     model_response_patterns.append(model_response_pattern)
 
 end_time = time.time()
-enem_size = enem.get_enem_size()
+enem_size = enem.get_enem_size() - start
 
 # Save results to file (in the order of the arguments)
 df = pd.DataFrame({"MODEL": [model_name] * enem_size, "TEMPERATURE": [temperature] * enem_size, "QUESTION": list(range(enem_size)), "ENEM_EXAM": [enem_exam] * enem_size,  "LANGUAGE": [language] * enem_size, "SEED": [seed] * enem_size, "MODEL_RESPONSE_PATTERN": model_response_patterns, "CORRECT_ANSWER": correct_answers})

@@ -9,7 +9,7 @@ from exam import ENEM
 files = glob.glob("enem-experiments-results/*")
 # removing files with full-answers in the name
 files = [file for file in files if "full-answers" not in file]
-print(len(files))
+print("Total files:", len(files))
 files.sort()
 
 files_parsed = glob.glob("enem-experiments-results-new-parsing/*")
@@ -18,9 +18,12 @@ files_parsed = [file.split("/")[-1] for file in files_parsed]
 
 files = [file for file in files if file.split("/")[-1] not in files_parsed]
 
+print("Files to be parsed:", len(files))
+
 new_df = None
 count = 0
 total = 0
+count_x = 0
 errors_exam = {}
 errors_language = {}
 errors_model = {}
@@ -38,9 +41,6 @@ for file in files:
     language = df.iloc[0, :].LANGUAGE
     seed = df.iloc[0, :].SEED
     number_options = df.iloc[0, :].NUMBER_OPTIONS
-
-    #enem = ENEM(enem_exam, exam_type=enem_exam_type, question_order=question_order, seed=seed, language=language, number_options=number_options)
-    #Questão: Nos livros Harry Potter , um anagrama do nome do personagem “TOM MARVOLO RIDDLE” gerou a frase “I AM LORD VOLDEMORT”. Suponha que Harry quisesse formar todos os anagramas da frase “I AM POTTER”, de tal forma que as vogais e consoantes aparecessem sempre intercaladas, e sem considerar o espaçamento entre as letras. Nessas condições, o número de anagramas formados é dado por
 
     new_TX_RESPOSTAS = ""
     new_RESPONSE_PATTERN = ""

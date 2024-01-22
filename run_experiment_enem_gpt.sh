@@ -1,6 +1,6 @@
 IFS=' ' # space is set as delimiter
 
-for model in "gpt-3.5-turbo-1106" 
+for model in "gpt-3.5-turbo-0613" 
 do
     for temperature in "0.6"
     do
@@ -12,7 +12,7 @@ do
                 do
                     for question_order in "original"
                     do
-                        for language in "pt-br" #"en" 
+                        for language in "pt-br" "en" 
                         do
                             for number_options in "5"
                             do

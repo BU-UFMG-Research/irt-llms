@@ -4,7 +4,7 @@ enem-experiments-results/
 enem-experiments-results-new-parsing/
 cache/
 enem-microdata/
-MICRODADOS_ENEM_2022.csv
+MICRODADOS_ENEM_*.csv
 QUEST_HAB_ESTUDO.csv
 experiments-with-irt.csv
 
