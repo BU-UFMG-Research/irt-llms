@@ -4,8 +4,16 @@ import os
 import pandas as pd
 import numpy as np
 
-exams = glob.glob("data/parsed-enem-exams/pt-br/default/*.csv")
-exams = exams + glob.glob("data/parsed-enem-exams/en/default/*.csv")
+# Including exams with 2019, 2020, 2021, 2022 in the name
+exams = glob.glob("data/parsed-enem-exams/pt-br/default/*2019*.csv")
+exams = exams + glob.glob("data/parsed-enem-exams/pt-br/default/*2020*.csv")
+exams = exams + glob.glob("data/parsed-enem-exams/pt-br/default/*2021*.csv")
+exams = exams + glob.glob("data/parsed-enem-exams/pt-br/default/*2022*.csv")
+exams = exams + glob.glob("data/parsed-enem-exams/en/default/*2019*.csv")
+exams = exams + glob.glob("data/parsed-enem-exams/en/default/*2020*.csv")
+exams = exams + glob.glob("data/parsed-enem-exams/en/default/*2021*.csv")
+exams = exams + glob.glob("data/parsed-enem-exams/en/default/*2022*.csv")
+exams.sort()
 
 # Argparse the seed
 parser = argparse.ArgumentParser(description='Run model on ENEM exam')
@@ -36,6 +44,8 @@ for exam in exams:
         # We have columns A, B, C, D, E. Map them to answer_order in this row.
         for i in range(5):
             df.loc[index, original_order[i]] = row[answer_order[i]]
+
+        df.loc[index, "answer_order"] = str(answer_order)
 
     # Get the language of the exam
     language = "pt-br" if "pt-br" in exam else "en"

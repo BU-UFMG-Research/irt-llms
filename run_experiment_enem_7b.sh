@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 44 tasks
-#$ -t 1-4
+#$ -t 1-640
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -20,7 +20,7 @@
 #$ -l gpus=1
 
 # Specify the minimum GPU compute capability. 
-#$ -l gpu_c=8.0
+#$ -l gpu_c=7.0
 
 declare -a params
 idx=0

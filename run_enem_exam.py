@@ -146,9 +146,21 @@ for seed in seeds:
 
     end_time = time.time()
 
+    # Remap answer pattern to original order
+    if args.exam_type.startswith("shuffle"):
+        model_response_pattern_remapped = enem.remapping_answer_pattern(model_response_pattern)
+        correct_response_pattern_remapped = enem.remapping_answer_pattern(correct_response_pattern)
+
+        # Swap variables (TX_RESPOSTAS AND TX_GABARITO have to be in the original order)
+        model_response_pattern, model_response_pattern_remapped = model_response_pattern_remapped, model_response_pattern
+        correct_response_pattern, correct_response_pattern_remapped = correct_response_pattern_remapped, correct_response_pattern
+    else:
+        model_response_pattern_remapped = None
+        correct_response_pattern_remapped = None
+
     # Save results to file (in the order of the arguments)
     filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.system_prompt_type}-{args.enem_exam}-{args.exam_type}-{args.question_order}-{args.language}-{args.number_options}-{seed}.parquet"
-    df = pd.DataFrame({"MODEL_NAME": [args.model], "MODEL_SIZE": [args.model_size], "TEMPERATURE": [args.temperature], "SYSTEM_PROMPT_TYPE": [args.system_prompt_type], "ENEM_EXAM": [args.enem_exam], "ENEM_EXAM_TYPE": [args.exam_type], "QUESTION_ORDER": [args.question_order], "LANGUAGE": [args.language], "NUMBER_OPTIONS": [args.number_options], "SEED": [seed], "CTT_SCORE": [ctt_score], "TX_RESPOSTAS": [model_response_pattern], "TX_GABARITO": [correct_response_pattern], "RESPONSE_PATTERN": [model_response_binary_pattern], "TOTAL_RUN_TIME_SEC": [end_time-start_time], "AVG_RUN_TIME_PER_ITEM_SEC": [(end_time-start_time)/enem.get_enem_size()]})
+    df = pd.DataFrame({"MODEL_NAME": [args.model], "MODEL_SIZE": [args.model_size], "TEMPERATURE": [args.temperature], "SYSTEM_PROMPT_TYPE": [args.system_prompt_type], "ENEM_EXAM": [args.enem_exam], "ENEM_EXAM_TYPE": [args.exam_type], "QUESTION_ORDER": [args.question_order], "LANGUAGE": [args.language], "NUMBER_OPTIONS": [args.number_options], "SEED": [seed], "CTT_SCORE": [ctt_score], "TX_RESPOSTAS": [model_response_pattern], "TX_GABARITO": [correct_response_pattern], "TX_RESPOSTAS_SHUFFLE": [model_response_pattern_remapped], "TX_GABARITO_SHUFFLE": [correct_response_pattern_remapped], "RESPONSE_PATTERN": [model_response_binary_pattern], "TOTAL_RUN_TIME_SEC": [end_time-start_time], "AVG_RUN_TIME_PER_ITEM_SEC": [(end_time-start_time)/enem.get_enem_size()]})
     df.to_parquet(filename)
 
     # # Saving the full answers to a parquet file (each answer is a row)

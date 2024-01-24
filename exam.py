@@ -55,3 +55,15 @@ class ENEM():
     
     def get_correct_answer(self, question_id):
         return self.enem_exam[question_id]["answer"]
+    
+    def remapping_answer_pattern(self, answer_pattern):
+        # Remap answer pattern to original order
+        original_order = list("ABCDE")
+        remapping_answer_pattern = ""
+        for i in range(len(answer_pattern)):
+            if answer_pattern[i] == "V":
+                remapping_answer_pattern += "V"
+                continue
+            answer_order = eval(self.enem_exam[i]["answer_order"])
+            remapping_answer_pattern += answer_order[original_order.index(answer_pattern[i])]
+        return remapping_answer_pattern

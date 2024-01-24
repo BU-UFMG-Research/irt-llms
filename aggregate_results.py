@@ -53,6 +53,8 @@ for file in files:
             new_df = pd.concat([new_df, pd.read_parquet(file)])
 
 new_df["CO_PROVA"] = new_df.ENEM_EXAM.apply(lambda x: x.split("_")[-1])
+new_df["EXAM_YEAR"] = new_df.ENEM_EXAM.apply(lambda x: x.split("_")[1])
+new_df["EXAM_SUBJECT"] = new_df.ENEM_EXAM.apply(lambda x: x.split("_")[2])
 new_df = new_df.reset_index(drop=True)
 new_df.MODEL_NAME.replace({"gpt-3.5-turbo": "gpt-3.5-turbo-0613"}, inplace=True)
 new_df.to_parquet("enem-experiments-results-processed.parquet")
