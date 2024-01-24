@@ -131,12 +131,13 @@ class LLAMA2(Model):
         self.device = device
         self.temperature = temperature
         self.seed = random_seed
-        set_seed(random_seed)
+        set_seed(self.seed)
 
     def get_answer_from_question(self, question, system_prompt_type, language):
         """
         Get answer from question
         """
+        set_seed(self.seed)
         prompt = self.create_prompt(question, system_prompt_type, language)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
         outputs = self.model.generate(inputs, temperature=self.temperature) # We can check out the gen config by model.generation_config. More details in how to change the generation available in: https://huggingface.co/docs/transformers/generation_strategies
@@ -185,6 +186,7 @@ class Mistral(Model):
         """
         Get answer from question
         """
+        set_seed(self.seed)
         prompt = self.create_prompt(question, system_prompt_type, language)
         inputs = self.tokenizer(prompt, return_tensors='pt').input_ids.to(self.device)
         outputs = self.model.generate(inputs, temperature=self.temperature, do_sample=True, top_p=0.9, top_k=0, max_length=4096, pad_token_id=self.tokenizer.eos_token_id)

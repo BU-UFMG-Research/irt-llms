@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 parser.add_argument('--model', type=str, choices=["llama2", "mistral", "random", "gpt-3.5-turbo-0613"], required=True, help='Model to run')
 parser.add_argument('--model_size', type=str, choices=["7b", "13b"], help='Model size')
 parser.add_argument('--temperature', type=float, help='Temperature')
-parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot", "few-shot", "few-shot-no-inst"], help='System prompt type')
+parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot", "few-shot"], help='System prompt type')
 # ENEM args
 parser.add_argument('--enem_exam', type=str, required=True, help='ENEM exam to run')
 parser.add_argument('--exam_type', type=str, help='ENEM exam type. It can be the default exam or a shuffled exam. If shuffled, the seed is used to control the randomness')
@@ -46,13 +46,13 @@ args = parser.parse_args()
 token = os.getenv("HF_TOKEN")
 
 if args.seed == -1:
-    seeds = [2724839799, 224453832, 1513448043, 745130168, 730262723]
+    seeds = [2724839799, 224453832, 1513448043, 745130168, 730262723, 4040595804, 362978403, 418235748, 444231693, 3113980281]
 else:
     seeds = [args.seed]
 
 for seed in seeds:
     # Set seed
-    set_seed(seed)
+    set_seed(seed)#enable_full_determinism
 
     # Print args
     print("Model: ", args.model)
