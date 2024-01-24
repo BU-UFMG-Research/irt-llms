@@ -54,7 +54,7 @@ else:
 
 for seed in seeds:
     # Set seed
-    set_seed(seed)#enable_full_determinism
+    set_seed(seed)
 
     # Print args
     print("Model: ", args.model)
