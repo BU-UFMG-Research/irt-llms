@@ -1,5 +1,7 @@
 import gc
 import os
+
+import numpy as np
 os.environ['HF_HOME'] = "cache/"
 os.environ['TRANSFORMERS_CACHE'] = "cache/"
 
@@ -165,7 +167,7 @@ for seed in seeds:
 
     # # Saving the full answers to a parquet file (each answer is a row)
     filename = f"enem-experiments-results/{args.model}-{args.model_size}-{args.temperature}-{args.system_prompt_type}-{args.enem_exam}-{args.exam_type}-{args.question_order}-{args.language}-{args.number_options}-{seed}-full-answers.parquet"
-    df = pd.DataFrame({"CORRECT_ANSWER": correct_answers, "PARSED_ANSWER": parsed_answers, "FULL_ANSWER": full_answers})
+    df = pd.DataFrame({"QUESTION": enem.get_question_number_array() ,"CORRECT_ANSWER": correct_answers, "PARSED_ANSWER": parsed_answers, "FULL_ANSWER": full_answers})
     df.to_parquet(filename)
 
     del model

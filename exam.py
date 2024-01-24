@@ -67,3 +67,6 @@ class ENEM():
             answer_order = eval(self.enem_exam[i]["answer_order"])
             remapping_answer_pattern += answer_order[original_order.index(answer_pattern[i])]
         return remapping_answer_pattern
+    
+    def get_question_number_array(self):
+        return [self.enem_exam[i]["question"] for i in range(len(self.enem_exam))]
