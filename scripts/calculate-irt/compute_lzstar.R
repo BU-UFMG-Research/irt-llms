@@ -14,11 +14,11 @@ co_prova = 1082
 
 file_itens_prova = paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/ITENS_PROVA_", year, ".csv")
 
-files_students_performance = paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/MICRODADOS_ENEM_", year, ".csv")
+# files_students_performance = paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/MICRODADOS_ENEM_", year, ".csv")
 
-students_performance <- read.csv(files_students_performance, header = TRUE, sep=';')
-# Removing NA values of CO_PROVA_MT
-students_performance <- subset(students_performance, !is.na(CO_PROVA_MT) & !is.na(TX_RESPOSTAS_MT) & !is.na(NU_NOTA_MT))
+# students_performance <- read.csv(files_students_performance, header = TRUE, sep=';', nrows = 1000)
+# # Removing NA values of CO_PROVA_MT
+# students_performance <- subset(students_performance, !is.na(CO_PROVA_MT) & !is.na(TX_RESPOSTAS_MT) & !is.na(NU_NOTA_MT))
 
 item_params <- read.csv(file_itens_prova, header = TRUE, sep=';')
 # Skip English itens.
@@ -58,6 +58,12 @@ response_patterns_current_year <- subset(response_patterns, grepl(year, ENEM_EXA
 # # Filter in response_patterns: CO_PROVA == CO_PROVA
 response_patterns_current_year <- subset(response_patterns_current_year, CO_PROVA == co_prova)
 
+# # TODO: remove - getting only chatgpt data in pt-br
+# response_patterns_current_year <- subset(response_patterns_current_year, MODEL_NAME == "gpt-3.5-turbo-0613")
+# response_patterns_current_year <- subset(response_patterns_current_year, LANGUAGE == "pt-br")
+
+# # Sort by SEED
+# response_patterns_current_year <- response_patterns_current_year[order(response_patterns_current_year$SEED, decreasing = FALSE), ]
 
 # Create a data matrix of dichotomous item scores: Persons as rows, items as columns (items are in the RESPONSE_PATTERN column as a str), item scores are either 0 or 1, missing values allowed.
 # TODO: probably this has to be created with the whole data (including the humans)
@@ -73,36 +79,39 @@ response_patterns_current_year <- subset(response_patterns_current_year, CO_PROV
 #   }
 # }
 
-llm_item_scores_matrix = matrix(nrow = nrow(students_performance) + nrow(response_patterns_current_year), ncol = 45)
-for (i in 1:nrow(students_performance)) {
-  str_response_pattern = students_performance$TX_RESPOSTAS_MT[i]
-  correct_response_pattern = students_performance$TX_GABARITO_MT[i]
-  # Computing the 0/1 response pattern
-  response_pattern = c()
-  str_response_pattern_vector <- unlist(strsplit(str_response_pattern, ""))
-  correct_response_pattern_vector <- unlist(strsplit(correct_response_pattern, ""))
-  for (j in 1:length(str_response_pattern_vector)) {
-    if (str_response_pattern_vector[j] == correct_response_pattern_vector[j]) {
-      response_pattern[j] <- 1
-    } else {
-      response_pattern[j] <- 0
-    }
-  }
-  for (j in 1:length(response_pattern)) {
-    llm_item_scores_matrix[i, j] <- response_pattern[j]
-  }
-}
+#llm_item_scores_matrix = matrix(nrow = nrow(students_performance) + nrow(response_patterns_current_year), ncol = 45)
+llm_item_scores_matrix = matrix(nrow = nrow(response_patterns_current_year), ncol = 45)
+# for (i in 1:nrow(students_performance)) {
+#   str_response_pattern = students_performance$TX_RESPOSTAS_MT[i]
+#   correct_response_pattern = students_performance$TX_GABARITO_MT[i]
+#   # Computing the 0/1 response pattern
+#   response_pattern = c()
+#   str_response_pattern_vector <- unlist(strsplit(str_response_pattern, ""))
+#   correct_response_pattern_vector <- unlist(strsplit(correct_response_pattern, ""))
+#   for (j in 1:length(str_response_pattern_vector)) {
+#     if (str_response_pattern_vector[j] == correct_response_pattern_vector[j]) {
+#       response_pattern[j] <- 1
+#     } else {
+#       response_pattern[j] <- 0
+#     }
+#   }
+#   for (j in 1:length(response_pattern)) {
+#     llm_item_scores_matrix[i, j] <- response_pattern[j]
+#   }
+# }
 
 # Create a numeric vector to store the IRT scores
 irt_scores = c()
 
-for (i in 1:nrow(students_performance)) {
-  response_pattern = llm_item_scores_matrix[i, ]
-  irt_scores[i] <- fscores(model3PL, method="EAP", response.pattern = response_pattern, )[1]
-}
+# for (i in 1:nrow(students_performance)) {
+#   response_pattern = llm_item_scores_matrix[i, ]
+#   irt_scores[i] <- fscores(model3PL, method="EAP", response.pattern = response_pattern, )[1]
+# }
+
 
 # Adding rows to the llm_item_scores_matrix respective to LLMs
-current_row = nrow(llm_item_scores_matrix) - nrow(response_patterns_current_year) + 1
+#current_row = nrow(llm_item_scores_matrix) - nrow(response_patterns_current_year) + 1
+current_row = 1
 for (i in 1:nrow(response_patterns_current_year)) {
   str_response_pattern = response_patterns_current_year$RESPONSE_PATTERN[i]
   # Split the string into individual characters
@@ -115,14 +124,17 @@ for (i in 1:nrow(response_patterns_current_year)) {
   current_row = current_row + 1
 }
 
-current_row = nrow(llm_item_scores_matrix) - nrow(response_patterns_current_year) + 1
+#current_row = nrow(llm_item_scores_matrix) - nrow(response_patterns_current_year) + 1
+current_row = 1
 for (i in 1:nrow(response_patterns_current_year)) {
   irt_scores[current_row] <- response_patterns_current_year$IRT_SCORE[i]
   current_row = current_row + 1
 }
 
+
 print("dim(llm_item_scores_matrix)")
 print(dim(llm_item_scores_matrix))
+print(length(irt_scores))
 
 # Convert to a list
 # ability_list = as.vector(ability_list)
@@ -133,6 +145,15 @@ itests = coef(model3PL, IRTpars = TRUE, simplify = TRUE)$items[, c("a", "b", "g"
 # Fint the indexes with NA values
 na_indexes = which(is.na(itests[, c("a")]))
 
+# Resp.621  -0.4592
+# Resp.622  -0.1567
+# Resp.623  -1.4772
+# Resp.624  -0.0763
+# Resp.625  -2.3634
+# Resp.626  -0.6923
+# Resp.627   1.5701
+# Resp.628   1.1378
+
 # Remove the indexes with NA values
 itests <- itests[-na_indexes, ]
 ##itests <- itests[-c(22, 25, 42), ]
@@ -141,6 +162,7 @@ itests <- itests[-na_indexes, ]
 llm_item_scores_matrix <- llm_item_scores_matrix[, -na_indexes]
 
 lzstar_stat = lzstar(llm_item_scores_matrix, IRT.PModel = "3PL", Ability=irt_scores, IP=itests)
+
 # # cuttoff
 # lzstarcut_05 = cuttoff(lzstar_stat, ModelFit="Parametric", Blvl:.05)
 # FlgdCase_lzstar = flagged.resp(lzstar_stat, cuttoff=lzstarcut_05, scores=T)
@@ -149,7 +171,7 @@ lzstar_stat = lzstar(llm_item_scores_matrix, IRT.PModel = "3PL", Ability=irt_sco
 
 # Plot the last len(response_patterns_current_year) positions
 for (i in 1:nrow(response_patterns_current_year)) {
-  PRFplot(llm_item_scores_matrix, respID=nrow(llm_item_scores_matrix) - i + 1, IP=itests, Ability=irt_scores)
+  PRFplot(llm_item_scores_matrix, respID=i, IP=itests, Ability=irt_scores)
 }
 
 # PRFplot(llm_item_scores_matrix, respID=6784, IP=itests, Ability=irt_scores)
@@ -161,8 +183,12 @@ for (i in 1:nrow(response_patterns_current_year)) {
 # PRFplot(llm_item_scores_matrix, respID=6790, IP=itests, Ability=irt_scores)
 # PRFplot(llm_item_scores_matrix, respID=6791, IP=itests, Ability=irt_scores)
 
+# Add a column to response_patterns_current_year with the lzstar_stat (convert to vector first)
+
+response_patterns_current_year$lzstar_stat <- lzstar_stat$PFscores
+
 # Print response_patterns_current_year columns: MODEL_NAME, MODEL_SIZE, LANGUAGE
-print(response_patterns_current_year[, c("MODEL_NAME", "MODEL_SIZE", "LANGUAGE", "IRT_SCORE")])
+print(response_patterns_current_year[, c("MODEL_NAME", "MODEL_SIZE", "LANGUAGE", "IRT_SCORE", "lzstar_stat")])
 
 
 ###########################################################

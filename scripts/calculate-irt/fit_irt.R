@@ -51,8 +51,6 @@ for (year in 2019:2022) {
 
   ###########################################################
   model_list <- list()
-  #for (i in 1:nrow(response_patterns)) {
-  # Iterate over the response patterns indexed
   
   for (i in 1:nrow(response_patterns_current_year)) {    
     enem_irt_score = response_patterns_current_year$NU_NOTA[i]
