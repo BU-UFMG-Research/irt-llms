@@ -51,6 +51,27 @@ for file in files:
         full_answer = row.FULL_ANSWER
         parsed_answer = row.PARSED_ANSWER
         correct_answer = row.CORRECT_ANSWER
+
+        # Try to reparse
+        if parsed_answer is None:
+            # 1) try to split by "(D) 11"
+            ans = full_answer.split("(D) 11")[-1].strip()
+            # Parse the ans using the Conservative parsing
+            # Get the option after "Answer:" or "Resposta:"
+            match = re.findall(r"(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
+            if len(set(match)) == 1:
+                # Return only the letter
+                parsed_answer = match[0][-1].removeprefix("(").removesuffix(")")
+            else:
+                match = re.findall(r"(\([A-E]\))", ans)
+                if len(set(match)) == 1:
+                    parsed_answer = match[0].removeprefix("(").removesuffix(")")
+                else:
+                    match = re.findall(r"([A-E]\))", ans) # Case were there is only one parenthesis (e.g. "A)")
+                    if len(set(match)) == 1:
+                        parsed_answer = match[0].removesuffix(")")
+                    else:
+                        parsed_answer = None
         
         total += 1
         if parsed_answer is None:
