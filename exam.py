@@ -61,11 +61,11 @@ class ENEM():
         original_order = list("ABCDE")
         remapping_answer_pattern = ""
         for i in range(len(answer_pattern)):
-            if answer_pattern[i] == "V":
-                remapping_answer_pattern += "V"
-                continue
-            answer_order = eval(self.enem_exam[i]["answer_order"])
-            remapping_answer_pattern += answer_order[original_order.index(answer_pattern[i])]
+            if answer_pattern[i] == "V" or answer_pattern[i] == "X":
+                remapping_answer_pattern += answer_pattern[i]
+            else:
+                answer_order = eval(self.enem_exam[i]["answer_order"])
+                remapping_answer_pattern += answer_order[original_order.index(answer_pattern[i])]
         return remapping_answer_pattern
     
     def get_question_number_array(self):
