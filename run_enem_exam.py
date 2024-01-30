@@ -30,7 +30,7 @@ GenerationConfig {
 parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 # LLMs args
 parser.add_argument('--model', type=str, choices=["llama2", "mistral", "random", "gpt-3.5-turbo-0613"], required=True, help='Model to run')
-parser.add_argument('--model_size', type=str, choices=["7b", "13b"], help='Model size')
+parser.add_argument('--model_size', type=str, choices=["7b", "13b", "70b"], help='Model size')
 parser.add_argument('--temperature', type=float, help='Temperature')
 parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot", "few-shot"], help='System prompt type')
 # ENEM args
