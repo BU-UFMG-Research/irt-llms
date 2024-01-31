@@ -8,13 +8,13 @@
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
 #   The default time is 12 hours
-#$ -l h_rt=2:00:00
+#$ -l h_rt=8:00:00
 
 # Give job a name
 #$ -N llm-enem-70b
 
-#$ -pe omp 16
-#$ -l mem_per_core=2G
+#$ -pe omp 8
+#$ -l mem_per_core=8G
 
 # Request 1 GPU 
 #$ -l gpus=1
