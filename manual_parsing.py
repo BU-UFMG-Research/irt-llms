@@ -131,6 +131,10 @@ for file in files:
                         parsed_answer = match[0].removesuffix(")")
                     else:
                         parsed_answer = None
+
+            # If parsed_answer is None, get the cases where the model refuses to answer
+            if "apologize" in full_answer.lower() or "i cannot answer" in full_answer.lower() or "large language model" in full_answer.lower() or "I notice that the question" in full_answer.lower() or "I'm a large language model" in full_answer.lower() or "i'm happy to help" in full_answer.lower() or "is not a multiple choice question" in full_answer.lower():
+                parsed_answer = "X"
         
         total += 1
         if parsed_answer is None:
@@ -150,25 +154,25 @@ for file in files:
             except KeyError:
                 errors_model[df.iloc[0, :].MODEL_NAME + " " + str(df.iloc[0, :].MODEL_SIZE)] = 1
 
-            # Manual parsing
-            print("Full answer:", full_answer, "\n")
-            parsed_answer = input("Model answer: ")
-            while not parsed_answer in list("ABCDEX"):
-                parsed_answer = input("Invalid Option. Model answer: ")
-            print("\n-------------------------------------\n")
+    #         # Manual parsing
+    #         print("Full answer:", full_answer, "\n")
+    #         parsed_answer = input("Model answer: ")
+    #         while not parsed_answer in list("ABCDEX"):
+    #             parsed_answer = input("Invalid Option. Model answer: ")
+    #         print("\n-------------------------------------\n")
         
-        new_TX_RESPOSTAS += parsed_answer
-        new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
-        new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
+    #     new_TX_RESPOSTAS += parsed_answer
+    #     new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
+    #     new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
 
-    df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
-    df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
-    df["CTT_SCORE"] = new_CTT_SCORE
+    # df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
+    # df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
+    # df["CTT_SCORE"] = new_CTT_SCORE
 
-    df.to_parquet(new_file)
+    # df.to_parquet(new_file)
 
-    print("Saved to ", new_file)
-    print("\n\n")
+    # print("Saved to ", new_file)
+    # print("\n\n")
 
 print("Total:", total)
 print("Count:", count)
