@@ -26,16 +26,71 @@ declare -a params
 idx=0
 IFS=' ' # space is set as delimiter
 
-# # Seed experiments
-for model in "mistral" "llama2"
+# Run (missing)
+# Model:  llama2
+# Model size:  7b
+# Temperature:  0.6
+# System prompt type:  few-shot
+# ENEM exam:  ENEM_2021_MT_CO_PROVA_906
+# Exam type:  default
+# Question order:  original
+# Language:  pt-br
+# Number of options:  5
+# Seed:  2605605301
+
+# Model:  llama2
+# Model size:  7b
+# Temperature:  0.6
+# System prompt type:  few-shot
+# ENEM exam:  ENEM_2020_CN_CO_PROVA_604
+# Exam type:  default
+# Question order:  original
+# Language:  pt-br
+# Number of options:  5
+# Seed:  4291993814
+
+# Model:  llama2
+# Model size:  7b
+# Temperature:  0.6
+# System prompt type:  few-shot
+# ENEM exam:  ENEM_2020_LC_CO_PROVA_584
+# Exam type:  default
+# Question order:  original
+# Language:  pt-br
+# Number of options:  5
+# Seed:  107052334
+
+# Model:  llama2
+# Model size:  7b
+# Temperature:  0.6
+# System prompt type:  few-shot
+# ENEM exam:  ENEM_2019_MT_CO_PROVA_522
+# Exam type:  default
+# Question order:  original
+# Language:  en
+# Number of options:  5
+# Seed:  1153836798
+
+# Model:  llama2
+# Model size:  7b
+# Temperature:  0.6
+# System prompt type:  few-shot
+# ENEM exam:  ENEM_2019_MT_CO_PROVA_522
+# Exam type:  default
+# Question order:  original
+# Language:  pt-br
+# Number of options:  5
+# Seed:  1140049751
+
+for model in "llama2" 
 do
     for model_size in "7b"
     do
         for temperature in "0.6"
         do
-            for system_prompt_type in "few-shot"
+            for system_prompt_type in "cot"
             do
-                for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062" "ENEM_2021_CH_CO_PROVA_886" "ENEM_2021_CN_CO_PROVA_916" "ENEM_2021_LC_CO_PROVA_896" "ENEM_2021_MT_CO_PROVA_906" "ENEM_2020_CH_CO_PROVA_574" "ENEM_2020_CN_CO_PROVA_604" "ENEM_2020_LC_CO_PROVA_584" "ENEM_2020_MT_CO_PROVA_594" "ENEM_2019_CH_CO_PROVA_520" "ENEM_2019_CN_CO_PROVA_519" "ENEM_2019_LC_CO_PROVA_521" "ENEM_2019_MT_CO_PROVA_522"
+                for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062"
                 do
                     for exam_type in "default"
                     do
@@ -45,41 +100,7 @@ do
                             do
                                 for number_options in "5"
                                 do
-                                    for seed in "1153836798"
-                                    do
-                                        params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$number_options$IFS$seed
-                                        ((idx++))
-                                    done
-                                done
-                            done
-                        done
-                    done
-                done 
-            done 
-        done
-    done
-done
-
-# Shuffle experiments
-for model in "mistral" "llama2"
-do
-    for model_size in "7b"
-    do
-        for temperature in "0.6"
-        do
-            for system_prompt_type in "few-shot"
-            do
-                for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062" "ENEM_2021_CH_CO_PROVA_886" "ENEM_2021_CN_CO_PROVA_916" "ENEM_2021_LC_CO_PROVA_896" "ENEM_2021_MT_CO_PROVA_906" "ENEM_2020_CH_CO_PROVA_574" "ENEM_2020_CN_CO_PROVA_604" "ENEM_2020_LC_CO_PROVA_584" "ENEM_2020_MT_CO_PROVA_594" "ENEM_2019_CH_CO_PROVA_520" "ENEM_2019_CN_CO_PROVA_519" "ENEM_2019_LC_CO_PROVA_521" "ENEM_2019_MT_CO_PROVA_522"
-                do
-                    for exam_type in "default"
-                    do
-                        for question_order in "original"
-                        do
-                            for language in "pt-br"
-                            do
-                                for number_options in "5"
-                                do
-                                    for seed in "1140049751"
+                                    for seed in "2605605301"
                                     do
                                         params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$number_options$IFS$seed
                                         ((idx++))
