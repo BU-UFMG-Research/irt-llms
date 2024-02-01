@@ -5,21 +5,20 @@ library(mirtCAT)
 library(arrow)
 library(PerFit)
 
+year = 2022
+
+co_prova = 1072 # TODO: maybe remove it and get it in the df
+
+# LLMs performance
 response_pattern_filepath = "../../enem-experiments-results-processed-with-irt.parquet"
 response_patterns <- read_parquet(response_pattern_filepath)
 response_patterns$ID <- 1:nrow(response_patterns)
 
-year = 2022
-co_prova = 1082
+# ENEM performance (students)
+students_performance <- read_parquet(paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/MICRODADOS_ENEM_", year, "_filtered.parquet"))
 
+# Item params
 file_itens_prova = paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/ITENS_PROVA_", year, ".csv")
-
-# files_students_performance = paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/MICRODADOS_ENEM_", year, ".csv")
-
-# students_performance <- read.csv(files_students_performance, header = TRUE, sep=';', nrows = 1000)
-# # Removing NA values of CO_PROVA_MT
-# students_performance <- subset(students_performance, !is.na(CO_PROVA_MT) & !is.na(TX_RESPOSTAS_MT) & !is.na(NU_NOTA_MT))
-
 item_params <- read.csv(file_itens_prova, header = TRUE, sep=';')
 # Skip English itens.
 item_params <- subset(item_params, TP_LINGUA != '0' | is.na(TP_LINGUA))
@@ -57,10 +56,6 @@ response_patterns_current_year <- subset(response_patterns, grepl(year, ENEM_EXA
 
 # # Filter in response_patterns: CO_PROVA == CO_PROVA
 response_patterns_current_year <- subset(response_patterns_current_year, CO_PROVA == co_prova)
-
-# # TODO: remove - getting only chatgpt data in pt-br
-# response_patterns_current_year <- subset(response_patterns_current_year, MODEL_NAME == "gpt-3.5-turbo-0613")
-# response_patterns_current_year <- subset(response_patterns_current_year, LANGUAGE == "pt-br")
 
 # # Sort by SEED
 # response_patterns_current_year <- response_patterns_current_year[order(response_patterns_current_year$SEED, decreasing = FALSE), ]
