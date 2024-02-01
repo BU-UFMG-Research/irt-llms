@@ -60,6 +60,7 @@ question...
 
     Instead, I suggest focusing on questions that promote critical thinking, understanding, and respect for different cultures, histories, and perspectives. I am here to provide information and answer questions to the best of my ability, while promoting a safe and respectful learning environment for all users. Please feel free to ask a different question. 
 - Model answer something, and then continue generating new questions.
+- Model basically translate the question. (Giving it X => wrong)
 """
 
 files = glob.glob("enem-experiments-results/*")
@@ -114,10 +115,10 @@ for file in files:
         # Try to reparse
         if parsed_answer is None:
             # 1) try to split by "(D) 11"
-            ans = full_answer.split("(D) 11")[-1].strip()
+            ans = full_answer.split("[/INST]")[-1].split("(D) 11")[-1].strip()
             # Parse the ans using the Conservative parsing
             # Get the option after "Answer:" or "Resposta:"
-            match = re.findall(r"(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
+            match = re.findall(r"(?i)(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
             if len(set(match)) == 1:
                 # Return only the letter
                 parsed_answer = match[0][-1].removeprefix("(").removesuffix(")")
@@ -131,11 +132,60 @@ for file in files:
                         parsed_answer = match[0].removesuffix(")")
                     else:
                         parsed_answer = None
+            
+            # Conservative parsing failed:
+            # Parse the following patter: Correct answer: (B)
+            if parsed_answer is None:
+                match = re.findall(r"(?i)Correct answer: \([A-E]\)", ans)
+                if len(set(match)) == 1:
+                    parsed_answer = match[0][-2].removeprefix("(").removesuffix(")")
+                else:
+                    parsed_answer = None
+            
+            # Get also the following formats:
+            # A resposta é (A)
+            # A resposta correta é (A)
+            # The answer is (A)
+            # The correct answer is (A)
+            if parsed_answer is None:
+                match = re.findall(r"(?i)(A resposta é|A resposta correta é|The answer is|The correct answer is|The best answer is|La respuesta correcta es) \(([A-E])\)", ans)
+                if len(set(match)) == 1:
+                    parsed_answer = match[0][1].removeprefix("(").removesuffix(")")
+                else:
+                    parsed_answer = None
+
+            # Conservative parsing failed:
+            # LLAMA models try to have an explanation for the answer.
+            if parsed_answer is None:
+                ans_no_exp = ans.split("Explanation:")[0]
+                match = re.findall(r"(\([A-E]\))", ans_no_exp)
+                if len(set(match)) == 1:
+                    parsed_answer = match[0].removeprefix("(").removesuffix(")")
+                else:
+                    parsed_answer = None
 
             # If parsed_answer is None, get the cases where the model refuses to answer
-            if "apologize" in full_answer.lower() or "i cannot answer" in full_answer.lower() or "large language model" in full_answer.lower() or "I notice that the question" in full_answer.lower() or "I'm a large language model" in full_answer.lower() or "i'm happy to help" in full_answer.lower() or "is not a multiple choice question" in full_answer.lower():
+            if  "i'm just an ai" in full_answer.lower() or "i cannot" in full_answer.lower() or "i cannot assist you with questions that are not in english" in full_answer.lower() or "not in the form of a multiple-choice question" in full_answer.lower() or "i'm not able to answer this question" in full_answer.lower() or "apologize" in full_answer.lower() or "i cannot answer" in full_answer.lower() or "large language model" in full_answer.lower() or "i notice that the question" in full_answer.lower() or "i'm a large language model" in full_answer.lower() or "i'm happy to help" in full_answer.lower() or "is not a multiple choice question" in full_answer.lower():
                 parsed_answer = "X"
-        
+
+            # Sometimes the model have more than one answer after splitting by "(D) 11". Parse this as X
+            if parsed_answer is None:
+                match = re.findall(r"(?i)(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
+                if len(set(match)) > 1:
+                    parsed_answer = "X"
+                match = re.findall(r"(?i)(A resposta é|A resposta correta é|The answer is|The correct answer is|The best answer is|La respuesta correcta es) \(([A-E])\)", ans)
+                if len(set(match)) > 1:
+                    parsed_answer = "X"
+                match = re.findall(r"(?i)Correct answer: \([A-E]\)", ans)
+                if len(set(match)) > 1:
+                    parsed_answer = "X"
+
+            # Model answer things like: Could you please provide a more specific and concrete question that I can answer?
+            if parsed_answer is None:
+                match = re.findall(r"provide a more specific and concrete question", full_answer.lower())
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+            
         total += 1
         if parsed_answer is None:
             count += 1
@@ -154,25 +204,25 @@ for file in files:
             except KeyError:
                 errors_model[df.iloc[0, :].MODEL_NAME + " " + str(df.iloc[0, :].MODEL_SIZE)] = 1
 
-    #         # Manual parsing
-    #         print("Full answer:", full_answer, "\n")
-    #         parsed_answer = input("Model answer: ")
-    #         while not parsed_answer in list("ABCDEX"):
-    #             parsed_answer = input("Invalid Option. Model answer: ")
-    #         print("\n-------------------------------------\n")
+            # Manual parsing
+            print("Full answer:", full_answer, "\n")
+            parsed_answer = input("Model answer: ")
+            while not parsed_answer in list("ABCDEX"):
+                parsed_answer = input("Invalid Option. Model answer: ")
+            print("\n-------------------------------------\n")
         
-    #     new_TX_RESPOSTAS += parsed_answer
-    #     new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
-    #     new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
+        new_TX_RESPOSTAS += parsed_answer
+        new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
+        new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
 
-    # df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
-    # df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
-    # df["CTT_SCORE"] = new_CTT_SCORE
+    df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
+    df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
+    df["CTT_SCORE"] = new_CTT_SCORE
 
-    # df.to_parquet(new_file)
+    df.to_parquet(new_file)
 
-    # print("Saved to ", new_file)
-    # print("\n\n")
+    print("Saved to ", new_file)
+    print("\n\n")
 
 print("Total:", total)
 print("Count:", count)
