@@ -27,7 +27,19 @@ class Model(ABC):
                     system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
                 system_prompt += f"or ({options_letters[-1]}). Answer only with the correct alternative."    
             elif system_prompt_type == "cot":
-                system_prompt = "Formulate a logical reasoning chain explanation that allows you to answer the multiple-choice question below. Only one alternative is correct.\nDesired format: point out the alternatives that make sense, choose the CORRECT alternative and justify it, and finish justifying why the other alternatives are incorrect. End the explanation with \"Answer: \" followed by the alternative."
+                system_prompt = """You will answer a multiple choice question with the following format:
+Question: Roger has 5 tennis balls. He buys 2 more cans of tennis balls. Each can has 3 tennis balls. How many tennis balls does he have now?
+Options:
+(A) 5
+(B) 12
+(C) 7
+(D) 11
+(E) 9
+Answer Format:
+Explanation: Roger started with 5 balls. 2 cans of 3 tennis balls each is 6 tennis balls. 5 + 6 = 11.
+Answer: (D) 11
+Instructions: Please answer the question below in accordance with the provided format.
+"""
             elif system_prompt_type == "few-shot":
                 system_prompt = """You will answer a multiple choice question with the following format:
 Question: Roger has 5 tennis balls. He buys 2 more cans of tennis balls. Each can has 3 tennis balls. How many tennis balls does he have now?
