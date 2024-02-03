@@ -64,12 +64,14 @@ question...
 """
 
 files = glob.glob("enem-experiments-results/*")
+#files = glob.glob("cot-test/*zs*")
 # removing files with full-answers in the name
 files = [file for file in files if "full-answers" not in file]
 print("Total files:", len(files))
 files.sort()
 
 files_parsed = glob.glob("enem-experiments-results-new-parsing/*")
+#files_parsed = glob.glob("cot-test-new-parsing/*zs*")
 files_parsed = [file for file in files_parsed if "full-answers" not in file]
 files_parsed = [file.split("/")[-1] for file in files_parsed]
 

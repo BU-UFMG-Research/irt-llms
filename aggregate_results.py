@@ -25,6 +25,11 @@ for file in files:
         df_v1.RESPONSE_PATTERN = df_v1.RESPONSE_PATTERN.apply(lambda x: x[5:])
         #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
         df_v1.CTT_SCORE = df_v1.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
+        # If it is shuffle (TX_RESPOSTAS_SHUFFLE not None), we have to do the same with TX_RESPOSTAS_SHUFFLE and TX_GABARITO_SHUFFLE
+        # if df_v1.TX_RESPOSTAS_SHUFFLE.notnull().all():
+        #     df_v1.TX_RESPOSTAS_SHUFFLE = df_v1.TX_RESPOSTAS_SHUFFLE.apply(lambda x: x[5:])
+        #     df_v1.TX_GABARITO_SHUFFLE = df_v1.TX_GABARITO_SHUFFLE.apply(lambda x: x[5:])
+
         df_v1 = df_v1.reset_index(drop=True)
 
         if new_df is None:

@@ -20,25 +20,10 @@ class Model(ABC):
 
     def get_system_prompt(self, system_prompt_type, language, options_letters):
         if language == "en":
-            if system_prompt_type == "simple":
-                # Create system_prompt using options_letters
-                system_prompt = "You are a machine designed to answer multiple choice questions with the correct alternative among "
-                for option in options_letters[:-1]:
-                    system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
-                system_prompt += f"or ({options_letters[-1]}). Answer only with the correct alternative."    
-            elif system_prompt_type == "cot":
-                system_prompt = """You will answer a multiple choice question with the following format:
-Question: Roger has 5 tennis balls. He buys 2 more cans of tennis balls. Each can has 3 tennis balls. How many tennis balls does he have now?
-Options:
-(A) 5
-(B) 12
-(C) 7
-(D) 11
-(E) 9
-Answer Format:
-Explanation: Roger started with 5 balls. 2 cans of 3 tennis balls each is 6 tennis balls. 5 + 6 = 11.
-Answer: (D) 11
-Instructions: Please answer the question below in accordance with the provided format.
+            if system_prompt_type == "zs-cot":
+                system_prompt = """Let's think step by step to answer the following multiple choice question.
+Instructions: Please answer the question below in the following format: 
+Answer: (Option)
 """
             elif system_prompt_type == "few-shot":
                 system_prompt = """You will answer a multiple choice question with the following format:
@@ -54,14 +39,11 @@ Answer: (D) 11
 Instructions: Please answer the question below in accordance with the provided format.
 """
         elif language == "pt-br":
-            if system_prompt_type == "simple":
-                # Create system_prompt using options_letters
-                system_prompt = "Você é uma máquina projetada para responder questões de múltipla escolha com a alternativa correta entre "
-                for option in options_letters[:-1]:
-                    system_prompt += f"({option}), " if len(options_letters) > 2 else f"({option}) "
-                system_prompt += f"ou ({options_letters[-1]}). Responda apenas com a alternativa correta."
-            elif system_prompt_type == "cot":
-                system_prompt = "Formule uma explicação em cadeia que permita responder à questão de múltipla escolha abaixo. Apenas uma alternativa é correta.\nFormato desejado: aponte as alternativas que fazem sentido, escolha a alternativa CORRETA e justifique, e termine justificando porque as demais alternativas estão incorretas. Encerre a explicação com \"Resposta: \" seguido pela alternativa."
+            if system_prompt_type == "zs-cot":
+                system_prompt = """Vamos pensar passo a passo para responder à seguinte questão de múltipla escolha.
+Instruções: Por favor, responda à pergunta abaixo no seguinte formato: 
+Resposta: (Opção)
+"""
             elif system_prompt_type == "few-shot":
                 system_prompt = """Você responderá uma questão de multipla escolha com o seguinte formato:
 Questão: Roger tem 5 bolas de tênis. Ele compra mais 2 latas de bolas de tênis. Cada lata tem 3 bolas de tênis. Quantas bolas de tênis ele tem agora?
@@ -185,10 +167,16 @@ class Mistral(Model):
     Mistral model class
     """
 
-    def __init__(self, token, device, temperature=0.6, random_seed=0):
+    def __init__(self, model_size, token, device, temperature=0.6, random_seed=0):
         super().__init__()
-        self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token)
-        self.model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token, device_map="auto", torch_dtype=torch.float16)
+        self.model_size = model_size
+        if self.model_size == "7b":
+            self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token)
+            self.model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", token=token, device_map="auto", torch_dtype=torch.float16)
+        elif self.model_size == "8x7b":
+            self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mixtral-8x7B-Instruct-v0.1", token=token)
+            self.model = AutoModelForCausalLM.from_pretrained("mistralai/Mixtral-8x7B-Instruct-v0.1", device_map="auto", load_in_4bit=True)
+
         self.device = device
         self.temperature = temperature
         self.seed = random_seed

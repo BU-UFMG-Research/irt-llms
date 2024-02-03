@@ -30,9 +30,9 @@ GenerationConfig {
 parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 # LLMs args
 parser.add_argument('--model', type=str, choices=["llama2", "mistral", "random", "gpt-3.5-turbo-0613"], required=True, help='Model to run')
-parser.add_argument('--model_size', type=str, choices=["7b", "13b", "70b"], help='Model size')
+parser.add_argument('--model_size', type=str, choices=["7b", "13b", "8x7b"], help='Model size')
 parser.add_argument('--temperature', type=float, help='Temperature')
-parser.add_argument('--system_prompt_type', type=str, choices=["simple", "cot", "few-shot"], help='System prompt type')
+parser.add_argument('--system_prompt_type', type=str, choices=["few-shot", "zs-cot"], help='System prompt type')
 # ENEM args
 parser.add_argument('--enem_exam', type=str, required=True, help='ENEM exam to run')
 parser.add_argument('--exam_type', type=str, help='ENEM exam type. It can be the default exam or a shuffled exam. If shuffled, the seed is used to control the randomness')
@@ -82,7 +82,7 @@ for seed in seeds:
     if args.model == "llama2":
         model = LLAMA2(args.model_size, token, device, temperature=args.temperature, random_seed=seed)
     elif args.model == "mistral":
-        if args.model_size == "7b":
+        if args.model_size == "7b" or args.model_size == "8x7b":
             model = Mistral(token, device, temperature=args.temperature, random_seed=seed)
         else:
             raise Exception("Model size not implemented for Mistral")

@@ -8,6 +8,7 @@ MICRODADOS_ENEM_*.csv
 QUEST_HAB_ESTUDO.csv
 experiments-with-irt.csv
 MICRODADOS_ENEM*.parquet
+cot-test/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
