@@ -83,7 +83,7 @@ for seed in seeds:
         model = LLAMA2(args.model_size, token, device, temperature=args.temperature, random_seed=seed)
     elif args.model == "mistral":
         if args.model_size == "7b" or args.model_size == "8x7b":
-            model = Mistral(token, device, temperature=args.temperature, random_seed=seed)
+            model = Mistral(args.model_size, token, device, temperature=args.temperature, random_seed=seed)
         else:
             raise Exception("Model size not implemented for Mistral")
     elif args.model == "random":

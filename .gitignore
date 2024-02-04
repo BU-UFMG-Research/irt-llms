@@ -9,6 +9,7 @@ QUEST_HAB_ESTUDO.csv
 experiments-with-irt.csv
 MICRODADOS_ENEM*.parquet
 cot-test/
+full-humans-irt-lz.parquet
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

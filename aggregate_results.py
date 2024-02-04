@@ -8,8 +8,8 @@ import seaborn as sns
 from exam import ENEM
 
 files = glob.glob("enem-experiments-results-new-parsing/*")
-# removing files with full-answers in the name
-files = [file for file in files if "full-answers" not in file]
+# TODO: remove this line
+files = [file for file in files if "cot" not in file]
 files.sort()
 
 new_df = None
