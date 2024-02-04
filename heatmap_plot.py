@@ -37,7 +37,7 @@ parser.add_argument("--year", "-y", type=int, required=True, help="Year of ENEM 
 args = parser.parse_args()
 year = args.year
 
-df = pd.read_parquet("enem-experiments-results-processed-with-irt.parquet")
+df = pd.read_parquet("enem-experiments-results-processed-with-irt-lz.parquet")
 df = df[df.ENEM_EXAM.str.contains(f"{year}")]
 
 # concat MODEL_NAME and MODEL_SIZE in one column
@@ -56,6 +56,7 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     sample_df = deepcopy(df[df.ENEM_EXAM == enem_exam])
     sample_df["CO_PROVA"] = sample_df["CO_PROVA"].astype(int)
     matrix_response_pattern = []
+    avg_lz_scores = []
     idx_name = []
     exam = df_items[df_items.CO_PROVA == sample_df.iloc[0, :].CO_PROVA]
     # Remove english as foreign language questions
@@ -67,10 +68,12 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     for full_model in sample_df.FULL_MODEL.unique():
         for language in sample_df.LANGUAGE.unique():
             sample_df_model = sample_df[(sample_df.FULL_MODEL == full_model) & (sample_df.LANGUAGE == language)]
+            avg_lz = sample_df_model.LZ_SCORE.mean()
+            avg_lz_scores.append(avg_lz)
             response_pattern_matrix = np.array(list(sample_df_model.RESPONSE_PATTERN.apply(lambda x: list(x))))
             # Convert each response pattern to a list of integers
             response_pattern_matrix = response_pattern_matrix.astype(int)
-            if response_pattern_matrix.shape != (10, 45):
+            if response_pattern_matrix.shape != (30, 45):
                 print(f"Error in {full_model} {language}")
                 print(response_pattern_matrix.shape)
                 print(response_pattern_matrix)
@@ -81,25 +84,7 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
             response_pattern = response_pattern[exam.IDX_POSICAO.values]
             matrix_response_pattern.append(response_pattern)
             idx_name.append(full_model + " " + language)
-
-    # for row in sample_df.itertuples():
-    #     response_pattern = np.array(list(row.RESPONSE_PATTERN)).astype(int)
-    #     response_pattern = response_pattern[exam.IDX_POSICAO.values]
-    #     matrix_response_pattern.append(response_pattern)
-    #     idx_name.append(row.FULL_MODEL + " " + row.LANGUAGE)
-
-    # Change the order of idx_name
-    # desired_order = [
-    #     'gpt-3.5-turbo-0613 None en', 'llama2 13b en', 'llama2 7b en', 'mistral 7b en',
-    #     'gpt-3.5-turbo-0613 None pt-br', 'llama2 13b pt-br', 'llama2 7b pt-br', 'mistral 7b pt-br'
-    # ]
-    # new_ordering = []
-    # for name in desired_order:
-    #     new_ordering.append(idx_name.index(name))
-    
-    # matrix_response_pattern = np.array(matrix_response_pattern)[new_ordering]
-    # idx_name = np.array(idx_name)[new_ordering]
-    
+        
     # Remapping idx_names to pretty names
     idx_name = [name.replace("gpt-3.5-turbo-0613 None en", "GPT-3.5 (EN)") for name in idx_name]
     idx_name = [name.replace("llama2 13b en", "Llama2-13B (EN)") for name in idx_name]
@@ -119,6 +104,10 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     axes[1 if i < 2 else 3, i % 2].set_yticks(np.arange(len(idx_name)), labels=idx_name, fontsize=5)
     axes[1 if i < 2 else 3, i % 2].set_xticklabels([])
     axes[3, i % 2].set_xlabel("Question", fontsize=6)
+
+    # Add the average lz scores as text in the end of each row of the heatmap
+    for j, avg_lz in enumerate(avg_lz_scores):
+        axes[1 if i < 2 else 3, i % 2].text(n_questions+1, j, f"{avg_lz:.2f}", fontsize=5, va="center")
 
     axes[0 if i < 2 else 2, i % 2].plot(range(1, n_questions+1), exam.NU_PARAM_B.values, "-")
     axes[0 if i < 2 else 2, i % 2].set_title(enem_exam, fontsize=8)
