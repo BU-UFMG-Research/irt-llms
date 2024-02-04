@@ -6,7 +6,10 @@ library(arrow)
 library(PerFit)
 
 # LLMs performance
-response_pattern_filepath <- "../../enem-experiments-results-processed-with-irt.parquet"
+# response_pattern_filepath <- "../../enem-experiments-results-processed-with-irt.parquet"
+# filename <- "../../enem-experiments-results-processed-with-irt-lz.parquet"
+response_pattern_filepath <- "../../enem-experiments-results-shuffle-processed-with-irt.parquet"
+filename <- "../../enem-experiments-results-shuffle-processed-with-irt-lz.parquet"
 response_patterns <- read_parquet(response_pattern_filepath)
 response_patterns$ID <- 1:nrow(response_patterns)
 # Initialize the LZ_SCORE column
@@ -118,4 +121,4 @@ for (year in 2019:2022) {
 }
 
 # Save response_patterns with LZ_SCORE
-write_parquet(response_patterns, "../../enem-experiments-results-processed-with-irt-lz.parquet")
+write_parquet(response_patterns, filename)

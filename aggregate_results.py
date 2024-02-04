@@ -7,9 +7,19 @@ import pandas as pd
 import seaborn as sns
 from exam import ENEM
 
-files = glob.glob("enem-experiments-results-new-parsing/*")
-# TODO: remove this line
-files = [file for file in files if "cot" not in file]
+# Argparse
+import argparse
+parser = argparse.ArgumentParser(description="Aggregate results from different experiments")
+parser.add_argument("--shuffle", action="store_true", help="If the results are from shuffle experiments")
+args = parser.parse_args()
+
+if args.shuffle:
+    files = glob.glob("enem-experiments-results-new-parsing-shuffle/*")
+else:
+    files = glob.glob("enem-experiments-results-new-parsing/*")
+
+# # TODO: remove this line
+# files = [file for file in files if "cot" not in file]
 files.sort()
 
 new_df = None
@@ -26,9 +36,9 @@ for file in files:
         #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
         df_v1.CTT_SCORE = df_v1.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
         # If it is shuffle (TX_RESPOSTAS_SHUFFLE not None), we have to do the same with TX_RESPOSTAS_SHUFFLE and TX_GABARITO_SHUFFLE
-        # if df_v1.TX_RESPOSTAS_SHUFFLE.notnull().all():
-        #     df_v1.TX_RESPOSTAS_SHUFFLE = df_v1.TX_RESPOSTAS_SHUFFLE.apply(lambda x: x[5:])
-        #     df_v1.TX_GABARITO_SHUFFLE = df_v1.TX_GABARITO_SHUFFLE.apply(lambda x: x[5:])
+        if args.shuffle:
+            df_v1.TX_RESPOSTAS_SHUFFLE = df_v1.TX_RESPOSTAS_SHUFFLE.apply(lambda x: x[5:])
+            df_v1.TX_GABARITO_SHUFFLE = df_v1.TX_GABARITO_SHUFFLE.apply(lambda x: x[5:])
 
         df_v1 = df_v1.reset_index(drop=True)
 
@@ -36,21 +46,6 @@ for file in files:
             new_df = df_v1
         else:
             new_df = pd.concat([new_df, df_v1])
-
-        # # v2: discard from 5th to 10th question (english as foreign language)
-        # df_v2 = deepcopy(df)
-        # df_v2.TX_RESPOSTAS = df_v2.TX_RESPOSTAS.apply(lambda x: x[:5] + x[10:])
-        # df_v2.TX_GABARITO = df_v2.TX_GABARITO.apply(lambda x: x[:5] + x[10:])
-        # df_v2.RESPONSE_PATTERN = df_v2.RESPONSE_PATTERN.apply(lambda x: x[:5] + x[10:])
-        # #CTT SCORE (sum of the number of ones in the RESPONSE_PATTERN)
-        # df_v2.CTT_SCORE = df_v2.RESPONSE_PATTERN.apply(lambda x: x.count("1"))
-        # df_v2.ENEM_EXAM = df_v2.ENEM_EXAM.apply(lambda x: x + "-english-fl")
-        # df_v2 = df_v2.reset_index(drop=True)
-
-        # if new_df is None:
-        #     new_df = pd.concat([df_v1, df_v2])
-        # else:
-        #     new_df = pd.concat([new_df, df_v1, df_v2])
     else:
         if new_df is None:
             new_df = pd.read_parquet(file)
@@ -62,7 +57,10 @@ new_df["EXAM_YEAR"] = new_df.ENEM_EXAM.apply(lambda x: x.split("_")[1])
 new_df["EXAM_SUBJECT"] = new_df.ENEM_EXAM.apply(lambda x: x.split("_")[2])
 new_df = new_df.reset_index(drop=True)
 new_df.MODEL_NAME.replace({"gpt-3.5-turbo": "gpt-3.5-turbo-0613"}, inplace=True)
-new_df.to_parquet("enem-experiments-results-processed.parquet")
+if args.shuffle:
+    new_df.to_parquet("enem-experiments-results-shuffle-processed.parquet")
+else:
+    new_df.to_parquet("enem-experiments-results-processed.parquet")
 
 count = 0
 total = 0

@@ -10,6 +10,7 @@ experiments-with-irt.csv
 MICRODADOS_ENEM*.parquet
 cot-test/
 full-humans-irt-lz.parquet
+enem-experiments-results-new-parsing-shuffle/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

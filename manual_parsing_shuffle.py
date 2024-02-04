@@ -43,7 +43,11 @@ for file in files:
     seed = df.iloc[0, :].SEED
     number_options = df.iloc[0, :].NUMBER_OPTIONS
 
-    new_TX_RESPOSTAS = ""
+    enem = ENEM(enem_exam=enem_exam, exam_type=enem_exam_type, 
+                question_order=question_order, seed=seed,
+                language=language, number_options=number_options)
+
+    new_TX_RESPOSTAS_SHUFFLE = ""
     new_RESPONSE_PATTERN = ""
     new_CTT_SCORE = 0
 
@@ -159,11 +163,12 @@ for file in files:
                 parsed_answer = input("Invalid Option. Model answer: ")
             print("\n-------------------------------------\n")
         
-        new_TX_RESPOSTAS += parsed_answer
+        new_TX_RESPOSTAS_SHUFFLE += parsed_answer
         new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
         new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
 
-    df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
+    df["TX_RESPOSTAS_SHUFFLE"] = new_TX_RESPOSTAS_SHUFFLE
+    df["TX_RESPOSTAS"] = enem.remapping_answer_pattern(new_TX_RESPOSTAS_SHUFFLE)
     df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
     df["CTT_SCORE"] = new_CTT_SCORE
 
