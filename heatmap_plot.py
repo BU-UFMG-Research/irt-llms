@@ -57,6 +57,7 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     sample_df["CO_PROVA"] = sample_df["CO_PROVA"].astype(int)
     matrix_response_pattern = []
     avg_lz_scores = []
+    std_lz_scores = []
     idx_name = []
     exam = df_items[df_items.CO_PROVA == sample_df.iloc[0, :].CO_PROVA]
     # Remove english as foreign language questions
@@ -70,6 +71,8 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
             sample_df_model = sample_df[(sample_df.FULL_MODEL == full_model) & (sample_df.LANGUAGE == language)]
             avg_lz = sample_df_model.LZ_SCORE.mean()
             avg_lz_scores.append(avg_lz)
+            std_lz = sample_df_model.LZ_SCORE.std()
+            std_lz_scores.append(std_lz)
             response_pattern_matrix = np.array(list(sample_df_model.RESPONSE_PATTERN.apply(lambda x: list(x))))
             # Convert each response pattern to a list of integers
             response_pattern_matrix = response_pattern_matrix.astype(int)
@@ -106,8 +109,8 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     axes[3, i % 2].set_xlabel("Question", fontsize=6)
 
     # Add the average lz scores as text in the end of each row of the heatmap
-    for j, avg_lz in enumerate(avg_lz_scores):
-        axes[1 if i < 2 else 3, i % 2].text(n_questions+1, j, f"{avg_lz:.2f}", fontsize=5, va="center")
+    for j, (avg_lz, std_lz) in enumerate(zip(avg_lz_scores, std_lz_scores)):
+        axes[1 if i < 2 else 3, i % 2].text(n_questions+1, j, f"{avg_lz:.2f} ({std_lz:.2f})", fontsize=5, va="center")
 
     axes[0 if i < 2 else 2, i % 2].plot(range(1, n_questions+1), exam.NU_PARAM_B.values, "-")
     axes[0 if i < 2 else 2, i % 2].set_title(enem_exam, fontsize=8)
