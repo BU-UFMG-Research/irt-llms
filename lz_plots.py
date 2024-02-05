@@ -34,15 +34,21 @@ df_humans["EXAM_YEAR_SUBJECT"] = df_humans["EXAM_YEAR"].astype(str) + " " + df_h
 # Combine 'MODEL_NAME' and 'MODEL_SIZE in a column
 df_llms["MODEL_NAME_SIZE"] = df_llms["MODEL_NAME"] + " " + df_llms["MODEL_SIZE"].astype(str)
 df_llms["MODEL_NAME_SIZE"] = df_llms["MODEL_NAME_SIZE"].map(MODEL_NAME_SIZE_MAPPING)
+
+# Constant columns for humans
 df_humans["MODEL_NAME_SIZE"] = "Humans"
+df_humans["LANGUAGE"] = "pt-br"
+
+# Adding the source to both dataframes
+df_llms["SOURCE"] = "LLMs"
+df_humans["SOURCE"] = "Humans"
 
 # Combine the data in a single dataframe using a subset of columns and a new column to identify the source
-df_llms = df_llms[["LZ_SCORE", "EXAM_YEAR_SUBJECT", "MODEL_NAME_SIZE", "EXAM_YEAR"]]
-df_llms["SOURCE"] = "LLMs"
-df_humans = df_humans[["LZ_SCORE", "EXAM_YEAR_SUBJECT", "MODEL_NAME_SIZE", "EXAM_YEAR"]]
-df_humans["SOURCE"] = "Humans"
+df_llms = df_llms[["LZ_SCORE", "EXAM_YEAR_SUBJECT", "MODEL_NAME_SIZE", "EXAM_YEAR", "LANGUAGE"]]
+df_humans = df_humans[["LZ_SCORE", "EXAM_YEAR_SUBJECT", "MODEL_NAME_SIZE", "EXAM_YEAR", "LANGUAGE"]]
 df = pd.concat([df_llms, df_humans])
 
+# Casting EXAM_YEAR to int
 df["EXAM_YEAR"] = df["EXAM_YEAR"].astype(int)
 
 # Plot lz data
@@ -52,8 +58,8 @@ df["EXAM_YEAR"] = df["EXAM_YEAR"].astype(int)
 for year in df["EXAM_YEAR"].unique():
     print(f"Plotting year {year}")
     df_year = df[(df["EXAM_YEAR"] == year)]
-    g = sns.displot(df_year, x="LZ_SCORE", hue="MODEL_NAME_SIZE", col="EXAM_YEAR_SUBJECT", kind="kde", common_norm=False, common_grid=True, col_wrap=2)
-    g.set_titles("{col_name}")
+    g = sns.displot(df_year, x="LZ_SCORE", hue="MODEL_NAME_SIZE", row="EXAM_YEAR_SUBJECT", col="LANGUAGE", kind="kde", common_norm=False, common_grid=True)
+    g.set_axis_labels("LZ Score", "Density")
     plt.savefig(f"plots/lz_plots_{year}.png", dpi=800)
     plt.close()
 
