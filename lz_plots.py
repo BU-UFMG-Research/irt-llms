@@ -16,6 +16,9 @@ MODEL_NAME_SIZE_MAPPING = {
     "mistral 7b": "Mistral-7B",
 }
 
+# Increase font size
+plt.rcParams.update({"font.size": 10})
+
 # Load lz data
 df_llms = pd.read_parquet("enem-experiments-results-processed-with-irt-lz.parquet")
 # Removing shuffle exams (for now)
@@ -60,7 +63,11 @@ for year in df["EXAM_YEAR"].unique():
     df_year = df[(df["EXAM_YEAR"] == year)]
     g = sns.displot(df_year, x="LZ_SCORE", hue="MODEL_NAME_SIZE", row="EXAM_YEAR_SUBJECT", col="LANGUAGE", kind="kde", common_norm=False, common_grid=True)
     g.set_axis_labels("LZ Score", "Density")
-    plt.savefig(f"plots/lz_plots_{year}.png", dpi=800)
+    g.set_titles("{row_name}\n{col_name}")
+    # Making all the x-axis labels appear
+    for ax in g.axes.flat:
+        ax.set_xticks(ax.get_xticks(), labels=[f"{x:.2f}" for x in ax.get_xticks()])
+    plt.savefig(f"plots/lz_plots_{year}.pdf", dpi=800)
     plt.close()
 
 
