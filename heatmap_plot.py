@@ -48,11 +48,11 @@ df["ENEM_EXAM"].replace(ENEM_MAPPING_NAME, inplace=True)
 # Plot heatmap of models x questions sorted by difficulty
 df_items = pd.read_csv(f"data/raw-enem-exams/microdados_enem_{year}/DADOS/ITENS_PROVA_{year}.csv", sep=";", encoding="latin-1")
 
-fig, axes = plt.subplots(4, 2, figsize=(7, 3.5), height_ratios=[0.5, 2, 0.5, 2])
-# Set fontsize
-plt.rcParams.update({"font.size": 6})
-fig.suptitle("Heatmap per ENEM Exam", fontsize=8)
+#fig, axes = plt.subplots(4, 2, figsize=(7, 3.5), height_ratios=[0.5, 2, 0.5, 2])
 for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
+    fig, axes = plt.subplots(2, 1, figsize=(7.5, 2), sharex=True, height_ratios=[0.5, 1], gridspec_kw = {'hspace':0.25})
+    # Set fontsize
+    plt.rcParams.update({"font.size": 6})
     sample_df = deepcopy(df[df.ENEM_EXAM == enem_exam])
     sample_df["CO_PROVA"] = sample_df["CO_PROVA"].astype(int)
     matrix_response_pattern = []
@@ -102,32 +102,40 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     min_item_difficulty = np.min(exam.NU_PARAM_B.values)
     max_item_difficulty = np.max(exam.NU_PARAM_B.values)
     
-    axes[1 if i < 2 else 3, i % 2].imshow(matrix_response_pattern, cmap="gray_r")
-    axes[1 if i < 2 else 3, i % 2].set_xticks(np.arange(len(exam.IDX_POSICAO.values)), labels=exam.IDX_POSICAO.values)
-    axes[1 if i < 2 else 3, i % 2].set_yticks(np.arange(len(idx_name)), labels=idx_name, fontsize=5)
-    axes[1 if i < 2 else 3, i % 2].set_xticklabels([])
-    axes[3, i % 2].set_xlabel("Question", fontsize=6)
+    axes[1].imshow(matrix_response_pattern, cmap="gray_r", aspect="auto")
+    axes[1].set_xticks(np.arange(len(exam.IDX_POSICAO.values)), labels=exam.IDX_POSICAO.values)
+    axes[1].set_xticklabels(range(1, n_questions+1, 1), fontsize=6)
+    axes[1].set_xlim(xmin=1, xmax=n_questions)
+    axes[1].set_yticks(np.arange(len(idx_name)), labels=idx_name, fontsize=6)
+    axes[1].set_xticklabels([])
+    axes[1].set_xlabel("Question", fontsize=6, labelpad=-5)
 
-    # Add the average lz scores as text in the end of each row of the heatmap
-    for j, (avg_lz, std_lz) in enumerate(zip(avg_lz_scores, std_lz_scores)):
-        axes[1 if i < 2 else 3, i % 2].text(n_questions+1, j, f"{avg_lz:.2f} ({std_lz:.2f})", fontsize=5, va="center")
-
-    axes[0 if i < 2 else 2, i % 2].plot(range(1, n_questions+1), exam.NU_PARAM_B.values, "-")
-    axes[0 if i < 2 else 2, i % 2].set_title(enem_exam, fontsize=8)
-    axes[0 if i < 2 else 2, i % 2].set_xticks(range(1, n_questions+1, 1))
-    axes[0 if i < 2 else 2, i % 2].set_xticklabels(range(1, n_questions+1, 1), fontsize=6)
-    axes[0 if i < 2 else 2, i % 2].set_yticks(axes[0 if i < 2 else 2, i % 2].get_yticks())
-    axes[0 if i < 2 else 2, i % 2].set_yticklabels(axes[0 if i < 2 else 2, i % 2].get_yticks(), fontsize=6)
-    axes[0 if i < 2 else 2, i % 2].set_ylabel("Item\nDifficulty", fontsize=6)
-    axes[0 if i < 2 else 2, i % 2].set_xlim(xmin=1, xmax=n_questions)
-    axes[0 if i < 2 else 2, i % 2].set_ylim(ymin=min_item_difficulty, ymax=max_item_difficulty)
     # Hide some of the xtickslabels
-    for idx, label in enumerate(axes[0 if i < 2 else 2, i % 2].xaxis.get_ticklabels()):
+    for idx, label in enumerate(axes[1].xaxis.get_ticklabels()):
         if idx == 0 or idx == n_questions-1:
             continue
         label.set_visible(False)
 
-plt.subplots_adjust(hspace=0)
-plt.tight_layout()
-plt.savefig(f"plots/response-pattern-heatmap-{year}.png", dpi=800)
-plt.close()
+
+    # Add the average lz scores as text in the end of each row of the heatmap
+    for j, (avg_lz, std_lz) in enumerate(zip(avg_lz_scores, std_lz_scores)):
+        axes[1].text(n_questions+1, j, f"{avg_lz:.2f} ({std_lz:.2f})", fontsize=6, va="center")
+        
+    axes[0].plot(range(1, n_questions+1), exam.NU_PARAM_B.values, "-")
+    axes[0].set_xticks(range(1, n_questions+1, 1))
+    axes[0].set_xticklabels(range(1, n_questions+1, 1), fontsize=6)
+    axes[0].set_yticks(axes[0].get_yticks())
+    axes[0].set_yticklabels(axes[0].get_yticks(), fontsize=6)
+    axes[0].set_ylabel("Item\nDifficulty", fontsize=6)
+    axes[0].set_xlim(xmin=1, xmax=n_questions)
+    axes[0].set_ylim(ymin=min_item_difficulty, ymax=max_item_difficulty)
+
+    # Hide some of the xtickslabels
+    for idx, label in enumerate(axes[0].xaxis.get_ticklabels()):
+        if idx == 0 or idx == n_questions-1:
+            continue
+        label.set_visible(False)
+
+    plt.savefig(f"plots/response-pattern-heatmap-{enem_exam}.pdf", dpi=800)
+    plt.close()
+
