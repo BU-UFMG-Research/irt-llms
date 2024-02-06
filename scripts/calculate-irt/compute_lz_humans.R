@@ -8,7 +8,7 @@ library(PerFit)
 # # Compute lz scores for humans
 
 # tp_lingua <- 0
-for (year in c(2021, 2020, 2019)) {
+for (year in c(2020, 2019)) {
 #for (tp_lingua in c(0, 1)) {
 
 humans_lz <- data.frame(matrix(ncol = 6, nrow = 0))
@@ -38,8 +38,9 @@ for (tp_lingua in c(0, 1)) {
   item_params <- item_params[order(item_params$CO_POSICAO, decreasing = FALSE), ]
 
   if (year == 2020) {
-    # Remove TP_VERSAO_DIGITAL == 0
-    item_params <- subset(item_params, TP_VERSAO_DIGITAL != 0 | is.na(TP_VERSAO_DIGITAL))
+    # Remove CO_PROVA == 693 (bugged exam)
+    item_params <- subset(item_params, CO_PROVA != 693)
+    print(unique(item_params$CO_PROVA))
   }
 
   item_params_mirt <- data.frame(matrix(ncol = 9, nrow = 0))
@@ -118,6 +119,23 @@ for (tp_lingua in c(0, 1)) {
 
         # print(length(str_response_pattern_vector))
         # print(length(correct_response_pattern_vector))
+
+        if (length(str_response_pattern_vector) != length(correct_response_pattern_vector)) {
+          print(paste0("Error: str_response_pattern_vector and correct_response_pattern_vector have different lengths. i: ", i))
+          print(paste0("str_response_pattern_vector: ", str_response_pattern_vector))
+          print(paste0("correct_response_pattern_vector: ", correct_response_pattern_vector))
+          q()
+        }
+        if (length(str_response_pattern_vector) != 45) {
+          print(paste0("Error: str_response_pattern_vector has length different from 45. i: ", i))
+          print(paste0("str_response_pattern_vector: ", str_response_pattern_vector))
+          q()
+        }
+        if (length(correct_response_pattern_vector) != 45) {
+          print(paste0("Error: correct_response_pattern_vector has length different from 45. i: ", i))
+          print(paste0("correct_response_pattern_vector: ", correct_response_pattern_vector))
+          q()
+        }
 
         for (j in 1:length(str_response_pattern_vector)) {
           if (str_response_pattern_vector[j] == correct_response_pattern_vector[j]) {
