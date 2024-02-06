@@ -4,6 +4,8 @@
 library(mirtCAT)
 library(arrow)
 
+# response_pattern_filepath = "../../enem-experiments-results-processed-cot.parquet"
+# filename <- "../../enem-experiments-results-processed-cot-with-irt.parquet"
 response_pattern_filepath = "../../enem-experiments-results-processed.parquet"
 filename <- "../../enem-experiments-results-processed-with-irt.parquet"
 # response_pattern_filepath = "../../enem-experiments-results-shuffle-processed.parquet"

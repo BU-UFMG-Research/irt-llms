@@ -18,9 +18,18 @@ if args.shuffle:
 else:
     files = glob.glob("enem-experiments-results-new-parsing/*")
 
-# # TODO: remove this line
+# Few-shot
 files = [file for file in files if "cot" not in file]
-files.sort()
+# COT
+# files = [file for file in files if "cot" in file]
+# files.sort()
+
+# # Get only the following seeds
+# seeds = ["2724839799", "224453832", "1513448043", "745130168", "730262723", "4040595804", "362978403", "418235748", "444231693", "3113980281"]
+# files = [file for file in files for seed in seeds if seed in file]
+# # Get only the following years
+# years = ["2022"]
+# files = [file for file in files for year in years if year in file]
 
 new_df = None
 for file in files:

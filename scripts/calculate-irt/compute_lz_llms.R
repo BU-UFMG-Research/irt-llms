@@ -6,6 +6,9 @@ library(arrow)
 library(PerFit)
 
 # LLMs performance
+# response_pattern_filepath <- "../../enem-experiments-results-processed-cot-with-irt.parquet"
+# filename <- "../../enem-experiments-results-processed-cot-with-irt-lz.parquet"
+
 response_pattern_filepath <- "../../enem-experiments-results-processed-with-irt.parquet"
 filename <- "../../enem-experiments-results-processed-with-irt-lz.parquet"
 # response_pattern_filepath <- "../../enem-experiments-results-shuffle-processed-with-irt.parquet"
@@ -16,7 +19,8 @@ response_patterns$ID <- 1:nrow(response_patterns)
 response_patterns$LZ_SCORE <- NA
 
 print("Compute lz scores for LLMs")
-for (year in 2019:2022) {
+#for (year in 2019:2022) {
+for (year in 2022) {
   print(paste0("Processing year: ", year))
 
   # Filter in response_patterns: ENEM_EXAM contains 2022 substring

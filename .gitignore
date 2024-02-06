@@ -11,6 +11,8 @@ MICRODADOS_ENEM*.parquet
 cot-test/
 full-humans-irt-lz.parquet
 enem-experiments-results-new-parsing-shuffle/
+humans-irt-lz*.parquet
+combine_lz_data.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

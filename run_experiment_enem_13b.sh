@@ -3,7 +3,7 @@
 # Set SCC project
 
 # Submit an array job with 22 tasks
-#$ -t 1-160
+#$ -t 1-80
 
 # Specify hard time limit for the job.
 #   The job will be aborted if it runs longer than this time.
@@ -130,38 +130,38 @@ do
     done
 done
 
-for model in "llama2" 
-do
-    for model_size in "13b"
-    do
-        for temperature in "0.6"
-        do
-            for system_prompt_type in "zs-cot"
-            do
-                for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062"
-                do
-                    for exam_type in "default"
-                    do
-                        for question_order in "original"
-                        do
-                            for language in "en" "pt-br"
-                            do
-                                for number_options in "5"
-                                do
-                                    for seed in "2724839799" "224453832" "1513448043" "745130168" "730262723" "4040595804" "362978403" "418235748" "444231693" "3113980281" #"2605605301" "872077901" "67119269" "57679137" "3533806160" "1687551200" "1875420408" "3728085373" "1223747668" "1140049751" "107052334" "1153836798" "4015636583" "2147626109" "2692512316" "2486590341" "3937635227" "131726768" "4291993814" "199464437"
-                                    do
-                                        params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$number_options$IFS$seed
-                                        ((idx++))
-                                    done
-                                done
-                            done
-                        done
-                    done
-                done 
-            done 
-        done
-    done
-done
+# for model in "llama2" 
+# do
+#     for model_size in "13b"
+#     do
+#         for temperature in "0.6"
+#         do
+#             for system_prompt_type in "zs-cot"
+#             do
+#                 for enem_exam in "ENEM_2022_LC_CO_PROVA_1072" "ENEM_2022_MT_CO_PROVA_1082" "ENEM_2022_CN_CO_PROVA_1092" "ENEM_2022_CH_CO_PROVA_1062"
+#                 do
+#                     for exam_type in "default"
+#                     do
+#                         for question_order in "original"
+#                         do
+#                             for language in "en" "pt-br"
+#                             do
+#                                 for number_options in "5"
+#                                 do
+#                                     for seed in "2724839799" "224453832" "1513448043" "745130168" "730262723" "4040595804" "362978403" "418235748" "444231693" "3113980281" #"2605605301" "872077901" "67119269" "57679137" "3533806160" "1687551200" "1875420408" "3728085373" "1223747668" "1140049751" "107052334" "1153836798" "4015636583" "2147626109" "2692512316" "2486590341" "3937635227" "131726768" "4291993814" "199464437"
+#                                     do
+#                                         params[idx]=$model$IFS$model_size$IFS$temperature$IFS$system_prompt_type$IFS$enem_exam$IFS$exam_type$IFS$question_order$IFS$language$IFS$number_options$IFS$seed
+#                                         ((idx++))
+#                                     done
+#                                 done
+#                             done
+#                         done
+#                     done
+#                 done 
+#             done 
+#         done
+#     done
+# done
 
 #Shuffle experiments
 # for model in "llama2" 

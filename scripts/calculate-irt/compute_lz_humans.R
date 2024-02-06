@@ -7,21 +7,34 @@ library(PerFit)
 
 # # Compute lz scores for humans
 
+# tp_lingua <- 0
+for (year in c(2021, 2020, 2019)) {
+#for (tp_lingua in c(0, 1)) {
+
 humans_lz <- data.frame(matrix(ncol = 6, nrow = 0))
 colnames(humans_lz) <- c("LZ_SCORE", "IRT_SCORE", "CO_PROVA", "EXAM_SUBJECT", "EXAM_YEAR")
 
 print("Compute lz scores for humans")
 
-for (year in 2019:2022) {
-  print(paste0("Processing year: ", year))
+#for (year in 2019:2022) {
+#for (year in c(2022, 2021, 2020, 2019)) {
+print(paste0("Processing year: ", year))
+for (tp_lingua in c(0, 1)) {
+  print(paste0("Processing tp_lingua: ", tp_lingua))
+
   # ENEM performance (students)
   students_performance <- read_parquet(paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/MICRODADOS_ENEM_", year, "_filtered.parquet"))
+
+  # # Getting the first 10 rows
+  # students_performance <- students_performance[1:10, ]
+  # print(dim(students_performance))
 
   # Item params
   file_itens_prova <- paste0("../../data/raw-enem-exams/microdados_enem_", year, "/DADOS/ITENS_PROVA_", year, ".csv")
   item_params <- read.csv(file_itens_prova, header = TRUE, sep=';')
   # Skip English itens.
-  item_params <- subset(item_params, TP_LINGUA != "0" | is.na(TP_LINGUA))
+  #item_params <- subset(item_params, TP_LINGUA != "0" | is.na(TP_LINGUA))
+  item_params <- subset(item_params, TP_LINGUA == tp_lingua | is.na(TP_LINGUA))
   item_params <- item_params[order(item_params$CO_POSICAO, decreasing = FALSE), ]
 
   if (year == 2020) {
@@ -44,13 +57,14 @@ for (year in 2019:2022) {
   model_list <- list()
   itests_list <- list()
 
-  for (exam_subject in c("MT", "CH", "CN", "LC")) {
-      print(paste0("Processing year: ", year, " and exam_subject: ", exam_subject))
+  #for (exam_subject in c("MT", "CH", "CN", "LC")) {
+  for (exam_subject in c("LC")) {
       if (exam_subject == "LC") {
         # Remove the students with TP_LINGUA == 0 (English as foreign language)
-        students_performance <- subset(students_performance, TP_LINGUA != 0)
+        students_performance <- subset(students_performance, TP_LINGUA == tp_lingua)
       }
 
+      print(paste0("Processing year: ", year, " and exam_subject: ", exam_subject))
       # Compute the LZ scores for humans
       students_item_scores_matrix <- matrix(nrow = nrow(students_performance), ncol = 45)
       for (i in 1:nrow(students_performance)) {
@@ -60,9 +74,12 @@ for (year in 2019:2022) {
         } else if (exam_subject == "LC") {
             str_response_pattern <- students_performance$TX_RESPOSTAS_LC[i]
             correct_response_pattern <- students_performance$TX_GABARITO_LC[i]
-            # Removing the first 5 characters from the response pattern
-            str_response_pattern <- substr(str_response_pattern, 6, nchar(str_response_pattern))
-            correct_response_pattern <- substr(correct_response_pattern, 6, nchar(correct_response_pattern))
+            # print(nchar(str_response_pattern))
+            # print(nchar(correct_response_pattern))
+            # # Removing the first 5 characters from the response pattern
+            # str_response_pattern <- substr(str_response_pattern, 6, nchar(str_response_pattern))
+            # correct_response_pattern <- substr(correct_response_pattern, 6, nchar(correct_response_pattern))
+
         } else if (exam_subject == "CH") {
           str_response_pattern <- students_performance$TX_RESPOSTAS_CH[i]
           correct_response_pattern <- students_performance$TX_GABARITO_CH[i]
@@ -74,6 +91,34 @@ for (year in 2019:2022) {
         response_pattern <- c()
         str_response_pattern_vector <- unlist(strsplit(str_response_pattern, ""))
         correct_response_pattern_vector <- unlist(strsplit(correct_response_pattern, ""))
+
+        # print(length(str_response_pattern_vector))
+        # print(length(correct_response_pattern_vector))
+
+        if (exam_subject == "LC") {
+          if (tp_lingua == 0) {
+            # Getting from 1-5 and from 11-45
+            if (length(str_response_pattern_vector) == 50) {
+              str_response_pattern_vector <- c(str_response_pattern_vector[1:5], str_response_pattern_vector[11:50])
+            }
+
+            if (length(correct_response_pattern_vector) == 50) {
+              correct_response_pattern_vector <- c(correct_response_pattern_vector[1:5], correct_response_pattern_vector[11:50])
+            }
+          } else {
+            # Getting from 6-50
+            if (length(str_response_pattern_vector) == 50) {
+              str_response_pattern_vector <- str_response_pattern_vector[6:50]
+            }
+            if (length(correct_response_pattern_vector) == 50) {
+              correct_response_pattern_vector <- correct_response_pattern_vector[6:50]
+            }
+          }
+        }
+
+        # print(length(str_response_pattern_vector))
+        # print(length(correct_response_pattern_vector))
+
         for (j in 1:length(str_response_pattern_vector)) {
           if (str_response_pattern_vector[j] == correct_response_pattern_vector[j]) {
             response_pattern[j] <- 1
@@ -87,6 +132,7 @@ for (year in 2019:2022) {
       }
 
       # Compute the irt scores for humans
+      print("Computing the irt scores for humans")
       irt_scores <- c()
 
       for (i in 1:nrow(students_performance)) {
@@ -132,9 +178,7 @@ for (year in 2019:2022) {
         co_provas <- unique(students_performance$CO_PROVA_CN)
       }
 
-      # print("Unique CO_PROVA")
-      # print(co_provas)
-
+      print("Computing lz scores for humans")
       for (co_prova in co_provas) {
         # Get the indexes of the students_performance with CO_PROVA == co_prova
         if (exam_subject == "MT") {
@@ -146,7 +190,6 @@ for (year in 2019:2022) {
         } else if (exam_subject == "CN") {
           indexes <- which(students_performance$CO_PROVA_CN == co_prova)
         }
-
 
         students_item_scores_matrix_co_prova <- students_item_scores_matrix[indexes, ]
         irt_scores_co_prova <- irt_scores[indexes]
@@ -178,8 +221,10 @@ for (year in 2019:2022) {
         #print(lz_stat)
         humans_lz <- rbind(humans_lz, data.frame(LZ_SCORE = lz_stat$PFscores, IRT_SCORE = irt_scores_co_prova, CO_PROVA = co_prova, EXAM_SUBJECT = exam_subject, EXAM_YEAR = year))
       }
+
+      write_parquet(humans_lz, paste0("../../humans-irt-lz-", year, "-", exam_subject, "_TP_LINGUA_", tp_lingua, ".parquet"))
   }
 }
-
+}
 # Save humans_lz to a parquet file
-write_parquet(humans_lz, "../../humans-irt-lz.parquet")
+#write_parquet(humans_lz, "../../humans-irt-lz.parquet")
