@@ -69,6 +69,8 @@ files = glob.glob("enem-experiments-results/*")
 files = [file for file in files if "full-answers" not in file]
 # Removing shuffled exams
 files = [file for file in files if not "shuffle" in file]
+# Removing CoT files
+#files = [file for file in files if "cot" not in file]
 print("Total files:", len(files))
 files.sort()
 
@@ -78,7 +80,9 @@ files_parsed = [file for file in files_parsed if "full-answers" not in file]
 files_parsed = [file.split("/")[-1] for file in files_parsed]
 
 files = [file for file in files if file.split("/")[-1] not in files_parsed]
-files = files[::-1]
+print("Files to parse:", len(files))
+if len(files) == 0:
+    print("No files to parse")
 
 new_df = None
 count = 0
@@ -211,25 +215,25 @@ for file in files:
             except KeyError:
                 errors_model[df.iloc[0, :].MODEL_NAME + " " + str(df.iloc[0, :].MODEL_SIZE)] = 1
 
-            # Manual parsing
-            print("Full answer:", full_answer, "\n")
-            parsed_answer = input("Model answer: ")
-            while not parsed_answer in list("ABCDEX"):
-                parsed_answer = input("Invalid Option. Model answer: ")
-            print("\n-------------------------------------\n")
+    #         # Manual parsing
+    #         print("Full answer:", full_answer, "\n")
+    #         parsed_answer = input("Model answer: ")
+    #         while not parsed_answer in list("ABCDEX"):
+    #             parsed_answer = input("Invalid Option. Model answer: ")
+    #         print("\n-------------------------------------\n")
         
-        new_TX_RESPOSTAS += parsed_answer
-        new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
-        new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
+    #     new_TX_RESPOSTAS += parsed_answer
+    #     new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
+    #     new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
 
-    df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
-    df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
-    df["CTT_SCORE"] = new_CTT_SCORE
+    # df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
+    # df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
+    # df["CTT_SCORE"] = new_CTT_SCORE
 
-    df.to_parquet(new_file)
+    # df.to_parquet(new_file)
 
-    print("Saved to ", new_file)
-    print("\n\n")
+    # print("Saved to ", new_file)
+    # print("\n\n")
 
 print("Total:", total)
 print("Count:", count)

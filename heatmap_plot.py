@@ -66,7 +66,11 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     exam.sort_values(by="NU_PARAM_B", inplace=True)
     # Remove questions with no difficulty (NaN)
     exam.dropna(subset=["NU_PARAM_B"], inplace=True)
-    for full_model in sample_df.FULL_MODEL.unique():
+    full_models = sample_df.FULL_MODEL.unique()
+    # Change the order of the models (mixtral (last one) after GPT-3.5 (first one))
+    full_models = list(full_models)
+    full_models.insert(1, full_models.pop(-1))
+    for full_model in full_models:
         for language in sample_df.LANGUAGE.unique():
             sample_df_model = sample_df[(sample_df.FULL_MODEL == full_model) & (sample_df.LANGUAGE == language)]
             avg_lz = sample_df_model.LZ_SCORE.mean()
@@ -93,10 +97,12 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
     idx_name = [name.replace("llama2 13b en", "Llama2-13B (EN)") for name in idx_name]
     idx_name = [name.replace("llama2 7b en", "Llama2-7B (EN)") for name in idx_name]
     idx_name = [name.replace("mistral 7b en", "Mistral-7B (EN)") for name in idx_name]
+    idx_name = [name.replace("mistral 8x7b en", "Mixtral-8x7B (EN)") for name in idx_name]
     idx_name = [name.replace("gpt-3.5-turbo-0613 None pt-br", "GPT-3.5 (PT-BR)") for name in idx_name]
     idx_name = [name.replace("llama2 13b pt-br", "Llama2-13B (PT-BR)") for name in idx_name]
     idx_name = [name.replace("llama2 7b pt-br", "Llama2-7B (PT-BR)") for name in idx_name]
     idx_name = [name.replace("mistral 7b pt-br", "Mistral-7B (PT-BR)") for name in idx_name]
+    idx_name = [name.replace("mistral 8x7b pt-br", "Mixtral-8x7B (PT-BR)") for name in idx_name]
 
     n_questions = len(exam.IDX_POSICAO.values)
     min_item_difficulty = np.min(exam.NU_PARAM_B.values)

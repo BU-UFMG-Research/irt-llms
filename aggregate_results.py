@@ -19,7 +19,7 @@ else:
     files = glob.glob("enem-experiments-results-new-parsing/*")
 
 # # TODO: remove this line
-# files = [file for file in files if "cot" not in file]
+files = [file for file in files if "cot" not in file]
 files.sort()
 
 new_df = None

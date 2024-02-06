@@ -4,10 +4,10 @@
 library(mirtCAT)
 library(arrow)
 
-#response_pattern_filepath = "../../enem-experiments-results-processed.parquet"
-#filename <- "../../enem-experiments-results-processed-with-irt.parquet"
-response_pattern_filepath = "../../enem-experiments-results-shuffle-processed.parquet"
-filename <- "../../enem-experiments-results-shuffle-processed-with-irt.parquet"
+response_pattern_filepath = "../../enem-experiments-results-processed.parquet"
+filename <- "../../enem-experiments-results-processed-with-irt.parquet"
+# response_pattern_filepath = "../../enem-experiments-results-shuffle-processed.parquet"
+# filename <- "../../enem-experiments-results-shuffle-processed-with-irt.parquet"
 response_patterns <- read_parquet(response_pattern_filepath)
 response_patterns$ID <- 1:nrow(response_patterns)
 
