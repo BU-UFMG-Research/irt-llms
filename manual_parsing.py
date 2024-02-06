@@ -159,9 +159,26 @@ for file in files:
             # The answer is (A)
             # The correct answer is (A)
             if parsed_answer is None:
-                match = re.findall(r"(?i)(A resposta é|A resposta correta é|The answer is|The correct answer is|The best answer is|La respuesta correcta es) \(([A-E])\)", ans)
+                match = re.findall(r"(?i)(A resposta é|A resposta correta é|The answer is|The correct answer is|The best answer is|La respuesta correcta es|most logical answer is|most suitable option is|alternativa correta parece ser a|resposta correta é a alternativa|resposta correta é a opção|alternativa correta é a|a resposta correta é:|resposta correta parece ser a alternativa|most suitable answer to the question is option|resposta correta é a|a resposta é:|a opção correta é|a resposta correta é a letra|alternativa correta é) \(([A-E])\)", ans)
                 if len(set(match)) == 1:
                     parsed_answer = match[0][1].removeprefix("(").removesuffix(")")
+                else:
+                    parsed_answer = None
+
+            # Also get the following format
+            #option (D) is the correct answer                
+            if parsed_answer is None:
+                match = re.findall(r"(?i)option \(([A-E])\) is the correct answer", ans)
+                if len(set(match)) == 1:
+                    parsed_answer = match[0].removeprefix("(").removesuffix(")")
+                else:
+                    parsed_answer = None
+
+            #a opção (A) é a resposta correta
+            if parsed_answer is None:
+                match = re.findall(r"(?i)a opção \(([A-E])\) é a resposta correta", ans)
+                if len(set(match)) == 1:
+                    parsed_answer = match[0].removeprefix("(").removesuffix(")")
                 else:
                     parsed_answer = None
 
@@ -184,7 +201,7 @@ for file in files:
                 match = re.findall(r"(?i)(Answer|Resposta):[ ]{0,1}(\([A-E]\))", ans)
                 if len(set(match)) > 1:
                     parsed_answer = "X"
-                match = re.findall(r"(?i)(A resposta é|A resposta correta é|The answer is|The correct answer is|The best answer is|La respuesta correcta es) \(([A-E])\)", ans)
+                match = re.findall(r"(?i)(A resposta é|A resposta correta é|The answer is|The correct answer is|The best answer is|La respuesta correcta es|most logical answer is|most suitable option is|alternativa correta parece ser a|resposta correta é a alternativa|resposta correta é a opção|alternativa correta é a|a resposta correta é:|resposta correta parece ser a alternativa|most suitable answer to the question is option|resposta correta é a|a resposta é:|a opção correta é|a resposta correta é a letra|alternativa correta é) \(([A-E])\)", ans)
                 if len(set(match)) > 1:
                     parsed_answer = "X"
                 match = re.findall(r"(?i)Correct answer: \([A-E]\)", ans)
@@ -194,6 +211,56 @@ for file in files:
             # Model answer things like: Could you please provide a more specific and concrete question that I can answer?
             if parsed_answer is None:
                 match = re.findall(r"provide a more specific and concrete question", full_answer.lower())
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+
+            if parsed_answer is None:
+                #Resposta: Nenhuma das alternativas.
+                match = re.findall(r"(?i)Resposta: Nenhuma das alternativas", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                # nenhuma das opções
+                match = re.findall(r"(?i)nenhuma das opções", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                # nenhuma das alternativas
+                match = re.findall(r"(?i)nenhuma das alternativas", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                #Resposta: (F)
+                match = re.findall(r"(?i)(Answer|Resposta):[ ]{0,1}(\(F\))", ans)
+                if len(set(match)) == 1:
+                    parsed_answer = "X"
+                #não é possível determinar a resposta correta entre as alternativas fornecidas
+                match = re.findall(r"(?i)não é possível determinar a resposta correta entre as alternativas fornecidas", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                # a resposta correta pode ser (C) ou (E).
+                match = re.findall(r"(?i)a resposta correta pode ser \([A-E]\) ou \([A-E]\)", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                #correct options are (A) and (D)
+                match = re.findall(r"(?i)correct options are \([A-E]\) and \([A-E]\)", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                #(Cannot be determined)
+                match = re.findall(r"\(Cannot be determined\)", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                #(None of the above)
+                match = re.findall(r"(?i)None of the above", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                #None of the options
+                match = re.findall(r"(?i)None of the options", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                # (F) Nenhuma das anteriores
+                match = re.findall(r"\(F\) Nenhuma das anteriores", ans)
+                if len(set(match)) >= 1:
+                    parsed_answer = "X"
+                #não podemos responder à pergunta
+                match = re.findall(r"(?i)não podemos responder à pergunta", ans)
                 if len(set(match)) >= 1:
                     parsed_answer = "X"
             
@@ -215,25 +282,25 @@ for file in files:
             except KeyError:
                 errors_model[df.iloc[0, :].MODEL_NAME + " " + str(df.iloc[0, :].MODEL_SIZE)] = 1
 
-    #         # Manual parsing
-    #         print("Full answer:", full_answer, "\n")
-    #         parsed_answer = input("Model answer: ")
-    #         while not parsed_answer in list("ABCDEX"):
-    #             parsed_answer = input("Invalid Option. Model answer: ")
-    #         print("\n-------------------------------------\n")
+            # Manual parsing
+            print("Full answer:", full_answer, "\n")
+            parsed_answer = input("Model answer: ")
+            while not parsed_answer in list("ABCDEX"):
+                parsed_answer = input("Invalid Option. Model answer: ")
+            print("\n-------------------------------------\n")
         
-    #     new_TX_RESPOSTAS += parsed_answer
-    #     new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
-    #     new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
+        new_TX_RESPOSTAS += parsed_answer
+        new_RESPONSE_PATTERN += "1" if parsed_answer == correct_answer else "0"
+        new_CTT_SCORE += 1 if parsed_answer == correct_answer else 0
 
-    # df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
-    # df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
-    # df["CTT_SCORE"] = new_CTT_SCORE
+    df["TX_RESPOSTAS"] = new_TX_RESPOSTAS
+    df["RESPONSE_PATTERN"] = new_RESPONSE_PATTERN
+    df["CTT_SCORE"] = new_CTT_SCORE
 
-    # df.to_parquet(new_file)
+    df.to_parquet(new_file)
 
-    # print("Saved to ", new_file)
-    # print("\n\n")
+    print("Saved to ", new_file)
+    print("\n\n")
 
 print("Total:", total)
 print("Count:", count)
