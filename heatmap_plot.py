@@ -1,9 +1,16 @@
 from copy import deepcopy
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import argparse
+
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+#matplotlib.style.use('ggplot')
+# plt.rcParams['axes.facecolor'] = 'white'
+plt.rc('font', size=6)
 
 ENEM_MAPPING_NAME = {
     #2022
@@ -43,6 +50,9 @@ df = df[df.ENEM_EXAM.str.contains(f"{year}")]
 # concat MODEL_NAME and MODEL_SIZE in one column
 df["FULL_MODEL"] = df["MODEL_NAME"].astype(str) + " " + df["MODEL_SIZE"].astype(str)
 
+df["ENEM_EXAM_YEAR"] = df["ENEM_EXAM"].apply(lambda x: x.split("_")[1])
+df["ENEM_EXAM_CODE"] = df["ENEM_EXAM"].apply(lambda x: x.split("_")[2])
+
 df["ENEM_EXAM"].replace(ENEM_MAPPING_NAME, inplace=True)
 
 # Plot heatmap of models x questions sorted by difficulty
@@ -50,7 +60,7 @@ df_items = pd.read_csv(f"data/raw-enem-exams/microdados_enem_{year}/DADOS/ITENS_
 
 #fig, axes = plt.subplots(4, 2, figsize=(7, 3.5), height_ratios=[0.5, 2, 0.5, 2])
 for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
-    fig, axes = plt.subplots(2, 1, figsize=(7.5, 2), height_ratios=[0.5, 1], gridspec_kw = {'hspace':0.25})
+    fig, axes = plt.subplots(2, 1, figsize=(2.5, 1.75), height_ratios=[0.5, 1], gridspec_kw = {'hspace':0.3})
     # Set fontsize
     plt.rcParams.update({"font.size": 6})
     sample_df = deepcopy(df[df.ENEM_EXAM == enem_exam])
@@ -94,13 +104,13 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
         
     # Remapping idx_names to pretty names
     idx_name = [name.replace("gpt-3.5-turbo-0613 None en", "GPT-3.5 (EN)") for name in idx_name]
-    idx_name = [name.replace("llama2 13b en", "Llama2-13B (EN)") for name in idx_name]
-    idx_name = [name.replace("llama2 7b en", "Llama2-7B (EN)") for name in idx_name]
+    idx_name = [name.replace("llama2 13b en", "LLaMA-13B (EN)") for name in idx_name]
+    idx_name = [name.replace("llama2 7b en", "LLaMA-7B (EN)") for name in idx_name]
     idx_name = [name.replace("mistral 7b en", "Mistral-7B (EN)") for name in idx_name]
     idx_name = [name.replace("mistral 8x7b en", "Mixtral-8x7B (EN)") for name in idx_name]
     idx_name = [name.replace("gpt-3.5-turbo-0613 None pt-br", "GPT-3.5 (PT-BR)") for name in idx_name]
-    idx_name = [name.replace("llama2 13b pt-br", "Llama2-13B (PT-BR)") for name in idx_name]
-    idx_name = [name.replace("llama2 7b pt-br", "Llama2-7B (PT-BR)") for name in idx_name]
+    idx_name = [name.replace("llama2 13b pt-br", "LLaMA-13B (PT-BR)") for name in idx_name]
+    idx_name = [name.replace("llama2 7b pt-br", "LLaMA-7B (PT-BR)") for name in idx_name]
     idx_name = [name.replace("mistral 7b pt-br", "Mistral-7B (PT-BR)") for name in idx_name]
     idx_name = [name.replace("mistral 8x7b pt-br", "Mixtral-8x7B (PT-BR)") for name in idx_name]
 
@@ -145,6 +155,18 @@ for i, enem_exam in enumerate(df.ENEM_EXAM.unique()):
             continue
         label.set_visible(False)
 
-    plt.savefig(f"plots/response-pattern-heatmap-{enem_exam}.pdf", dpi=800)
+    # Both are unique in this case
+    if len(sample_df.ENEM_EXAM_CODE.unique()) > 1:
+        print("More than one code")
+        raise SystemExit()
+
+    if len(sample_df.ENEM_EXAM_YEAR.unique()) > 1:
+        print("More than one year")
+        raise SystemExit()
+
+    enem_code = sample_df.ENEM_EXAM_CODE.unique()[0]
+    enem_year = sample_df.ENEM_EXAM_YEAR.unique()[0]
+
+    plt.savefig(f"plots/response-pattern-heatmap-{enem_year}-{enem_code}.pdf", bbox_inches='tight', pad_inches=0.05, dpi=800)
     plt.close()
 

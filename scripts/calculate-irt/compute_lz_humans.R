@@ -8,7 +8,8 @@ library(PerFit)
 # # Compute lz scores for humans
 
 # tp_lingua <- 0
-for (year in c(2020, 2019)) {
+#for (year in c(2020, 2019)) {
+for (year in c(2020)) {
 #for (tp_lingua in c(0, 1)) {
 
 humans_lz <- data.frame(matrix(ncol = 6, nrow = 0))
@@ -19,7 +20,8 @@ print("Compute lz scores for humans")
 #for (year in 2019:2022) {
 #for (year in c(2022, 2021, 2020, 2019)) {
 print(paste0("Processing year: ", year))
-for (tp_lingua in c(0, 1)) {
+#for (tp_lingua in c(0, 1)) {
+for (tp_lingua in c(1)) {
   print(paste0("Processing tp_lingua: ", tp_lingua))
 
   # ENEM performance (students)
@@ -38,9 +40,20 @@ for (tp_lingua in c(0, 1)) {
   item_params <- item_params[order(item_params$CO_POSICAO, decreasing = FALSE), ]
 
   if (year == 2020) {
-    # Remove CO_PROVA == 693 (bugged exam)
-    item_params <- subset(item_params, CO_PROVA != 693)
-    print(unique(item_params$CO_PROVA))
+    # TP_VERSAO_DIGITAL == 0 or na
+    item_params <- subset(item_params, TP_VERSAO_DIGITAL == 0 | is.na(TP_VERSAO_DIGITAL))
+  }
+
+  # Unique co_prova
+  co_provas <- unique(item_params$CO_PROVA)
+  for (co_prova in co_provas) {
+    item_params_prova <- subset(item_params, CO_PROVA == co_prova)
+    if (dim(item_params_prova)[1] != 45) {
+      # Remove co_prova from item_params
+      item_params <- subset(item_params, CO_PROVA != co_prova)
+      # Remove co_prova from students_performance
+      students_performance <- subset(students_performance, CO_PROVA_LC != co_prova)
+    }
   }
 
   item_params_mirt <- data.frame(matrix(ncol = 9, nrow = 0))
