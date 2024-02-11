@@ -8,8 +8,6 @@ import argparse
 
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
-#matplotlib.style.use('ggplot')
-# plt.rcParams['axes.facecolor'] = 'white'
 plt.rc('font', size=6)
 
 ENEM_MAPPING_NAME = {

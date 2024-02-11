@@ -13,19 +13,6 @@ from models import LLAMA2, Mistral, RandomModel, GPT
 from exam import ENEM
 from transformers import set_seed
 
-"""
-LLAMA2 model config (7B, 13B, 70B):
-GenerationConfig {
-  "bos_token_id": 1,
-  "do_sample": true,
-  "eos_token_id": 2,
-  "max_length": 4096,
-  "pad_token_id": 0,
-  "temperature": 0.6,
-  "top_p": 0.9
-}
-"""
-
 # Create an argparser
 parser = argparse.ArgumentParser(description='Run model on ENEM exam')
 # LLMs args
