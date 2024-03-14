@@ -13,3 +13,7 @@ python3 aggregate_results.py
 cd scripts/calculate-irt/
 RScript compute_irt_models.R
 ```
+
+# Data
+
+```data.zip```password is: ```kdd24data```
